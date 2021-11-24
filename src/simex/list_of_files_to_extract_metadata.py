@@ -1,13 +1,12 @@
 import glob
 import os
-import re
 import datetime
 import argparse
 from argparse import RawTextHelpFormatter
 
 def arguments_parse():
     help = """
-Given a directory with SiPeCaM files, produce list of files that whose metadata
+Given a directory with SiPeCaM files, produce list of files whose metadata
 will be extracted and list of directories where data will be copied
 (traditional server).
 --------------
@@ -15,7 +14,6 @@ Example usage:
 --------------
 
 list_of_files_to_extract_metadata --input_directory /input_dir
-                                  --output_directory /output_dir
 
 """
 
@@ -25,18 +23,13 @@ list_of_files_to_extract_metadata --input_directory /input_dir
     parser.add_argument("--input_directory",
                         required=True,
                         default=None,
-                        help="Help of test argparse fun")
-    parser.add_argument("--output_directory",
-                        required=True,
-                        default=None,
-                        help="Help of test argparse fun")
+                        help="Directory with data: audio, image and video")
     args = parser.parse_args()
     return args
 
 def main():
     args = arguments_parse()
     input_directory = args.input_directory
-    output_directory = args.output_directory
     sipecam_files_to_extract_metadata = os.path.join(os.path.expanduser("~"),
                                         "sipecam_files_to_extract_metadata_from_" + \
                                         datetime.date.today().strftime("%m-%d-%Y") + \
