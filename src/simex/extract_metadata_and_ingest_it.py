@@ -16,7 +16,6 @@ Example usage:
 
 extract_metadata_and_ingest_it --input_file filename.(WAV|JPG|AVI)
 
-
 """
 
 
