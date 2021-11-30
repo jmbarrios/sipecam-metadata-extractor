@@ -32,7 +32,7 @@ def main():
     input_directory = args.input_directory
     sipecam_files_to_extract_metadata = os.path.join(os.path.expanduser("~"),
                                         "sipecam_files_to_extract_metadata_from_" + \
-                                        datetime.date.today().strftime("%m-%d-%Y") + \
+                                        datetime.date.today().strftime("%m-%Y") + \
                                         ".txt")
     wav_extensions = "WAV|wav"
     jpg_extensions = "JPG|jpg"
