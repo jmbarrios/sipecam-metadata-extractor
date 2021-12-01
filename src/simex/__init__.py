@@ -10,7 +10,7 @@ def setup_logging(logs_filename):
         logger: instance of logging, commonly named RootLogger.
         
     """
-    logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
+    logFormatter = logging.Formatter("%(asctime)s [%(levelname)s]  %(message)s")
     file_handler = logging.FileHandler(logs_filename, mode='a')
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logFormatter)
@@ -26,7 +26,7 @@ def get_logger_for_writing_logs_to_file(input_file):
     Args:
         input_file (str): basename of file that will be processed.
         It's used for creating file with logs.
-    Return:
+    Returns:
         getLogger instance from logging module.
     """
     dirname_file = os.path.join(os.path.dirname(input_file),
