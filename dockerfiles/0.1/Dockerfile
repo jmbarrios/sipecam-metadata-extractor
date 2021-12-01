@@ -24,7 +24,6 @@ RUN jupyter notebook --generate-config && \
 #install simex pkg
 
 ADD . /root/sipecam-metadata-extractor
-RUN ls /root/
 RUN cd /root/sipecam-metadata-extractor/src && pip3 install .
 
 VOLUME ["/shared_volume"]
