@@ -4,23 +4,7 @@ import re
 import argparse
 from argparse import RawTextHelpFormatter
 
-from . import setup_logging
-
-def get_logger_for_writing_logs_to_file(input_file):
-    """
-    Helper function to setup logging to level specified
-    in setup_logging function.
-    Args:
-        input_file (str): file that will be processed, its basename
-        is used for creating file with logs.
-    Output:
-        getLogger instance from logging module.
-    """
-    dirname_file = os.path.join(os.path.dirname(input_file),
-                                "temp_logs_simex_extract_metadata_and_ingest")
-    os.makedirs(dirname_file, exist_ok=True)
-    logs_filename = os.path.join(dirname_file, "logs_" + os.path.basename(input_file))
-    return setup_logging(logs_filename)
+from . import get_logger_for_writing_logs_to_file
 
 def arguments_parse():
     help = """
