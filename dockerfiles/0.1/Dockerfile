@@ -23,9 +23,8 @@ RUN jupyter notebook --generate-config && \
 
 #install simex pkg
 
-RUN cd ~
-ADD . src/
-RUN cd /src && pip3 install .
+ADD . ~/
+RUN cd ~/src && pip3 install .
 
 VOLUME ["/shared_volume"]
 
