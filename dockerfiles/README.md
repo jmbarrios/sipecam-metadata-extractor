@@ -40,9 +40,6 @@ docker run --rm -v $HOME:/shared_volume --name $CONTAINER_NAME -d $REPO_URL:$JUP
 docker run --rm -v $HOME:/shared_volume --name $CONTAINER_NAME -p 3000:8888 -d $REPO_URL:$JUPYTERLAB_VERSION /usr/local/bin/jupyter lab --ip=0.0.0.0 --no-browser --allow-root
 ```
 
-**Note: in some systems (Windows e.g.) possibly need to use "$HOME:/shared_volume"**
-
-
 ## jupyter lab running at localhost:3000
 
 (not necessary) Enter to docker container with:
