@@ -4,10 +4,22 @@
 
 ### Commands of `simex`
 
+Set:
+
+```
+SIMEX_VERSION=0.1
+REPO_URL=sipecam/simex
+CONTAINER_NAME=sipecam-simex
+```
+
+Command `list_of_files_to_extract_metadata`
+
 ```
 dir_with_sipecam_data=/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/
 docker run --rm -v $HOME:/shared_volume --name $CONTAINER_NAME -d $REPO_URL:$JUPYTERLAB_VERSION list_of_files_to_extract_metadata --input_directory $dir_with_sipecam_data
 ```
+
+Command `extract_metadata_and_ingest`
 
 ```
 file_to_be_processed=$(head -n 1 ~/sipecam_files_to_extract_metadata_from_*)
