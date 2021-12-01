@@ -1,6 +1,6 @@
 # sipecam-metadata-extractor
 
-## Running `sipecam/simex/` docker image in CONABIO cluster 
+## Running `sipecam/simex:0.1` docker image in CONABIO cluster 
 
 ### Commands of `simex`
 
