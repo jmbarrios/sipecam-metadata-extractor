@@ -30,7 +30,9 @@ list_of_files_to_extract_metadata --input_directory /input_dir
 def main():
     args = arguments_parse()
     input_directory = args.input_directory
-    sipecam_files_to_extract_metadata = os.path.join("/shared_volume",
+    shared_volume = "/shared_volume"
+    os.makedirs(shared_volume, exist_ok=True)
+    sipecam_files_to_extract_metadata = os.path.join(shared_volume,
                                         "sipecam_files_to_extract_metadata_from_" + \
                                         datetime.date.today().strftime("%m-%Y") + \
                                         ".txt")
