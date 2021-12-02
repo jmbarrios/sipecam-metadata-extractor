@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="simex", version=0.1,
-      description=u"Simplify metadata extraction of SiPeCaM files",
+      description=u"Simplify extraction of metadata for SiPeCaM files",
       author="CONABIO",
       packages=['simex'],
       install_requires = [
