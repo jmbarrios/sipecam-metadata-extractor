@@ -54,7 +54,11 @@ wc -l sipecam_files_to_extract_metadata_from_02-12-2021.txt
 
 ### Create slurm jobs
 
-Only first time: create `~/slurm_extract_metadata_and_ingest_it.sh`
+Only first time: create 
+
+```
+~/slurm_extract_metadata_and_ingest_it.sh
+```
 
 ```
 #!/bin/bash
@@ -78,7 +82,11 @@ today_date=$(printf '%(%d-%m-%Y)T\n' -1)
 mkdir sipecam_extract_metadata_$today_date
 ```
 
-Create shell inside: `~/sipecam_extract_metadata_$today_date/script_to_generate_slurm_jobs.sh`
+Create shell 
+
+```
+~/sipecam_extract_metadata_$today_date/script_to_generate_slurm_jobs.sh
+```
 
 ```
 #!/bin/bash
