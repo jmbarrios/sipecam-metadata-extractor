@@ -34,7 +34,7 @@ def main():
     os.makedirs(shared_volume, exist_ok=True)
     sipecam_files_to_extract_metadata = os.path.join(shared_volume,
                                         "sipecam_files_to_extract_metadata_from_" + \
-                                        datetime.date.today().strftime("%m-%Y") + \
+                                        datetime.date.today().strftime("%d-%m-%Y") + \
                                         ".txt")
     wav_extensions = "WAV|wav"
     jpg_extensions = "JPG|jpg"
