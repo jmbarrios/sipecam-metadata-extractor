@@ -134,7 +134,7 @@ wc -l ~/test_sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metada
 Launch this subset of jobs
 
 ```
-bash ~/test_sipecam_extract_metadata_$today_date/test_subset_slurm_jobs_extract_metadata_and_ingest_it.sh
+bash ~/test_sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
 ```
 
 Check logs of slurm inside `~/test_sipecam_extract_metadata_$today_date`
