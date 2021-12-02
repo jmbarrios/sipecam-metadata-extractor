@@ -74,7 +74,11 @@ docker run --rm -v /LUSTRE:/LUSTRE -v $HOME:/shared_volume -d $REPO_URL:$SIMEX_V
 ```
 file_to_be_processed_1=$(head -n 1 ~/sipecam_files_to_extract_metadata_from_02-12-2021.txt)
 bash ~/slurm_extract_metadata_and_ingest_it.sh "$file_to_be_processed_1"
-#wait 10 secs
+```
+
+Wait 10 secs (approx).
+
+```
 dirname_file_to_be_processed_1=$(dirname "$file_to_be_processed_1")
 temp_dir_for_logs_1=$(find "$dirname_file_to_be_processed_1" -name 'temp*')
 basename_file_to_be_processed_1=$(basename "$file_to_be_processed_1")
