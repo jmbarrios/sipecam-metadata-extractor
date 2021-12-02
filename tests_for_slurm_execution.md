@@ -1,6 +1,4 @@
-# sipecam-metadata-extractor
-
-# Running `sipecam/simex:0.1` docker image in CONABIO cluster
+# Running `sipecam/simex:0.1` docker image in CONABIO cluster (test)
 
 Ssh to one node of CONABIO cluster as user `madmex_admin`.
 
