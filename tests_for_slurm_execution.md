@@ -162,4 +162,12 @@ cat "$temp_dir_for_logs_2/logs_$basename_file_to_be_processed_2"
 
 ```
 
+Delete dirs
+
+```
+rm -rf "$temp_dir_for_logs_1"
+rm -rf "$temp_dir_for_logs_2"
+```
+
 ### (End Test 2)
+
