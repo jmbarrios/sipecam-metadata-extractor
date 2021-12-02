@@ -4,13 +4,13 @@ Ssh to one node of CONABIO cluster as user `madmex_admin`.
 
 ## Parallel-ssh to rmi and pull docker image for each node at CONABIO
 
-Create `~/nodos.txt`
+Create
 
 ```
-nodo1
-nodo2
-nodo3
-nodo4
+~/nodos_sipecam.txt
+```
+
+```
 nodo5
 nodo6
 nodo7
@@ -21,7 +21,8 @@ then:
 ```
 SIMEX_VERSION=0.1
 REPO_URL=sipecam/simex
-parallel-ssh -i -p 2 -v -h nodos.txt -l madmex_admin "docker rmi $REPO_URL:$SIMEX_VERSION; docker pull $REPO_URL:$SIMEX_VERSION"
+parallel-ssh -i -p 2 -v -h nodos_sipecam.txt -l madmex_admin "docker rmi $REPO_URL:$SIMEX_VERSION"
+parallel-ssh -i -p 2 -v -h nodos_sipecam.txt -l madmex_admin "docker pull $REPO_URL:$SIMEX_VERSION"
 ```
 
 **Every time metadata will be extracted run last command of `parallel-ssh` (setting env variables) to download latest docker image of `sipecam/simex`.**
@@ -62,13 +63,12 @@ Only first time: create
 #!/bin/bash
 # first parameter is file whose metadata will be extracted
 
-#SBATCH --ntasks=1           # total processes across nodes
-#SBATCH --ntasks-per-node=1
-#SBATCH --requeue
+#SBATCH --exclude nodo1,nodo2,nodo3,nodo4
 
 SIMEX_VERSION=0.1
 REPO_URL=sipecam/simex
 
+echo $(hostname)
 echo "$1"
 docker run --rm -v /LUSTRE:/LUSTRE -v $HOME:/shared_volume -d $REPO_URL:$SIMEX_VERSION extract_metadata_and_ingest_it --input_file "$1"
 ```
