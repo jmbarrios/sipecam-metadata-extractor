@@ -97,7 +97,7 @@ Create directory with name of date of launch:
 
 ```
 today_date=$(printf '%(%d-%m-%Y)T\n' -1)
-mkdir sipecam_extract_metadata_$today_date
+mkdir test_sipecam_extract_metadata_$today_date
 ```
 
 Create shell inside: `~/sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh`
@@ -110,7 +110,7 @@ today_date=$(printf '%(%d-%m-%Y)T\n' -1)
 
 for f in $(head -n 2 ~/sipecam_files_to_extract_metadata_from_$today_date.txt)
 do
-  echo "sbatch -D ~/sipecam_extract_metadata_$today_date ~/slurm_extract_metadata_and_ingest_it.sh \""$f"\"" >> ~/sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
+  echo "sbatch -D ~/test_sipecam_extract_metadata_$today_date ~/slurm_extract_metadata_and_ingest_it.sh \""$f"\"" >> ~/test_sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
 done
 IFS=$SAVEIFS
 
@@ -119,13 +119,13 @@ IFS=$SAVEIFS
 Get jobs that will be executed with `slurm`
 
 ```
-bash ~/sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh
+bash ~/test_sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh
 ```
 
 Check number of jobs that will be launched will slurm
 
 ```
-wc -l ~/sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
+wc -l ~/test_sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
 ```
 
 
@@ -134,10 +134,10 @@ wc -l ~/sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_an
 Launch this subset of jobs
 
 ```
-bash ~/sipecam_extract_metadata_$today_date/test_subset_slurm_jobs_extract_metadata_and_ingest_it.sh
+bash ~/test_sipecam_extract_metadata_$today_date/test_subset_slurm_jobs_extract_metadata_and_ingest_it.sh
 ```
 
-Check logs of slurm inside `~/sipecam_extract_metadata_$today_date`
+Check logs of slurm inside `~/test_sipecam_extract_metadata_$today_date`
 
 Check running jobs
 
