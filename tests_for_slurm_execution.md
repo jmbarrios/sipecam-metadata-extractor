@@ -100,7 +100,7 @@ today_date=$(printf '%(%d-%m-%Y)T\n' -1)
 mkdir test_sipecam_extract_metadata_$today_date
 ```
 
-Create shell inside: `~/sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh`
+Create shell inside: `~/test_sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh`
 
 ```
 #!/bin/bash
