@@ -71,26 +71,6 @@ echo "$1"
 docker run --rm -v /LUSTRE:/LUSTRE -v $HOME:/shared_volume -d $REPO_URL:$SIMEX_VERSION extract_metadata_and_ingest_it --input_file "$1"
 ```
 
-### Test everything it's ok
-
-```
-file_to_be_processed_1=$(head -n 1 ~/sipecam_files_to_extract_metadata_from_02-12-2021.txt)
-bash ~/slurm_extract_metadata_and_ingest_it.sh "$file_to_be_processed_1"
-#wait 10 secs
-dirname_file_to_be_processed_1=$(dirname "$file_to_be_processed_1")
-temp_dir_for_logs_1=$(find "$dirname_file_to_be_processed_1" -name 'temp*')
-basename_file_to_be_processed_1=$(basename "$file_to_be_processed_1")
-cat "$temp_dir_for_logs_1/logs_$basename_file_to_be_processed_1"
-```
-
-Delete dir
-
-```
-rm -rf "$temp_dir_for_logs_1"
-```
-
-### (End) Test everything it's ok
-
 Create directory with name of date of launch:
 
 ```
@@ -125,49 +105,6 @@ Check number of jobs that will be launched will slurm
 ```
 wc -l ~/sipecam_extract_metadata_$today_date/slurm_jobs_extract_metadata_and_ingest_it.sh
 ```
-
-
-### Test everything it's ok
-
-
-Get subset of jobs that will help you to check that everything its ok
-
-```
-head -n 2 ~/sipecam_extract_metadata_$today_date/slurm_jobs_extract_metadata_and_ingest_it.sh > ~/sipecam_extract_metadata_$today_date/subset_slurm_jobs_extract_metadata_and_ingest_it.sh
-```
-Launch this subset of jobs
-
-```
-bash ~/sipecam_extract_metadata_$today_date/subset_slurm_jobs_extract_metadata_and_ingest_it.sh
-```
-
-Check logs of slurm inside `~/sipecam_extract_metadata_$today_date`
-
-Check running jobs
-
-```
-squeue -u madmex_admin
-```
-
-Check logs of metadata extraction command.
-
-```
-file_to_be_processed_1=$(head -n 1 ~/sipecam_files_to_extract_metadata_from_02-12-2021.txt)
-dirname_file_to_be_processed_1=$(dirname "$file_to_be_processed_1")
-temp_dir_for_logs_1=$(find "$dirname_file_to_be_processed_1" -name 'temp*')
-basename_file_to_be_processed_1=$(basename "$file_to_be_processed_1")
-cat "$temp_dir_for_logs_1/logs_$basename_file_to_be_processed_1"
-
-file_to_be_processed_2=$(head -n 2 ~/sipecam_files_to_extract_metadata_from_02-12-2021.txt|tail -n 1)
-dirname_file_to_be_processed_2=$(dirname "$file_to_be_processed_2")
-temp_dir_for_logs_2=$(find "$dirname_file_to_be_processed_2" -name 'temp*')
-basename_file_to_be_processed_2=$(basename "$file_to_be_processed_2")
-cat "$temp_dir_for_logs_2/logs_$basename_file_to_be_processed_2"
-
-```
-
-### (End) Test everything it's ok
-
 
 Launch them
 
