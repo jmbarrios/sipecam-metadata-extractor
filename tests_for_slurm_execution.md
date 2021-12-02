@@ -87,7 +87,7 @@ Delete dir
 rm -rf "$temp_dir_for_logs_1"
 ```
 
-### (End) Test everything 1
+### (End Test 1)
 
 Create directory with name of date of launch:
 
@@ -157,3 +157,5 @@ basename_file_to_be_processed_2=$(basename "$file_to_be_processed_2")
 cat "$temp_dir_for_logs_2/logs_$basename_file_to_be_processed_2"
 
 ```
+
+### (End Test 2)
