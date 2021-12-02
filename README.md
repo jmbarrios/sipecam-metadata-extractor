@@ -99,7 +99,6 @@ do
   echo "sbatch -D ~/sipecam_extract_metadata_$today_date ~/slurm_extract_metadata_and_ingest_it.sh \""$f"\"" >> ~/sipecam_extract_metadata_$today_date/slurm_jobs_extract_metadata_and_ingest_it.sh
 done
 IFS=$SAVEIFS
-
 ```
 
 Get jobs that will be executed with `slurm`
@@ -126,7 +125,11 @@ Check running jobs:
 squeue -u madmex_admin
 ```
 
-Check logs of slurm inside `~/sipecam_extract_metadata_$today_date`
+Check logs of slurm inside 
+
+```
+~/sipecam_extract_metadata_$today_date
+```
 
 Use `scontrol show jobid -dd <jobid>` to get info from job.
 

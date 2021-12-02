@@ -52,7 +52,11 @@ wc -l sipecam_files_to_extract_metadata_from_02-12-2021.txt
 
 ### Create slurm jobs
 
-Only first time: create `~/slurm_extract_metadata_and_ingest_it.sh`
+Only first time: create 
+
+```
+~/slurm_extract_metadata_and_ingest_it.sh
+```
 
 ```
 #!/bin/bash
@@ -100,7 +104,11 @@ today_date=$(printf '%(%d-%m-%Y)T\n' -1)
 mkdir test_sipecam_extract_metadata_$today_date
 ```
 
-Create shell inside: `~/test_sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh`
+Create shell
+
+```
+~/test_sipecam_extract_metadata_$today_date/test_script_to_generate_slurm_jobs.sh
+```
 
 ```
 #!/bin/bash
@@ -113,7 +121,6 @@ do
   echo "sbatch -D ~/test_sipecam_extract_metadata_$today_date ~/slurm_extract_metadata_and_ingest_it.sh \""$f"\"" >> ~/test_sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
 done
 IFS=$SAVEIFS
-
 ```
 
 Get jobs that will be executed with `slurm`
@@ -137,7 +144,11 @@ Launch this subset of jobs
 bash ~/test_sipecam_extract_metadata_$today_date/test_slurm_jobs_extract_metadata_and_ingest_it.sh
 ```
 
-Check logs of slurm inside `~/test_sipecam_extract_metadata_$today_date`
+Check logs of slurm inside 
+
+```
+~/test_sipecam_extract_metadata_$today_date
+```
 
 Check running jobs
 
