@@ -46,7 +46,7 @@ dir_with_sipecam_data=/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/
 docker run --rm -v /LUSTRE:/LUSTRE -v $HOME:/shared_volume --name $CONTAINER_NAME -d $REPO_URL:$SIMEX_VERSION list_of_files_to_extract_metadata --input_directory $dir_with_sipecam_data
 ```
 
-Check number of files whose metadata will be extracted:
+Check number of files whose metadata will be extracted
 
 ```
 wc -l sipecam_files_to_extract_metadata_from_02-12-2021.txt
@@ -67,6 +67,7 @@ Only first time: create `~/slurm_extract_metadata_and_ingest_it.sh`
 SIMEX_VERSION=0.1
 REPO_URL=sipecam/simex
 
+echo "$1"
 docker run --rm -v /LUSTRE:/LUSTRE -v $HOME:/shared_volume -d $REPO_URL:$SIMEX_VERSION extract_metadata_and_ingest_it --input_file "$1"
 ```
 
@@ -82,7 +83,7 @@ basename_file_to_be_processed_1=$(basename "$file_to_be_processed_1")
 cat "$temp_dir_for_logs_1/logs_$basename_file_to_be_processed_1"
 ```
 
-Delete dir:
+Delete dir
 
 ```
 rm -rf "$temp_dir_for_logs_1"
@@ -107,8 +108,7 @@ today_date=$(printf '%(%d-%m-%Y)T\n' -1)
 
 for f in $(cat ~/sipecam_files_to_extract_metadata_from_$today_date.txt)
 do
-  filename=$(basename "$f")
-  echo "sbatch ~/slurm_extract_metadata_and_ingest_it.sh \""$f"\"" >> ~/sipecam_extract_metadata_$today_date/slurm_jobs_extract_metadata_and_ingest_it.sh
+  echo "sbatch -D ~/sipecam_extract_metadata_$today_date ~/slurm_extract_metadata_and_ingest_it.sh \""$f"\"" >> ~/sipecam_extract_metadata_$today_date/slurm_jobs_extract_metadata_and_ingest_it.sh
 done
 IFS=$SAVEIFS
 
@@ -120,7 +120,7 @@ Get jobs that will be executed with `slurm`
 bash ~/sipecam_extract_metadata_$today_date/script_to_generate_slurm_jobs.sh
 ```
 
-Check number of jobs that will be launched will slurm:
+Check number of jobs that will be launched will slurm
 
 ```
 wc -l ~/sipecam_extract_metadata_$today_date/slurm_jobs_extract_metadata_and_ingest_it.sh
@@ -141,14 +141,13 @@ Launch this subset of jobs
 bash ~/sipecam_extract_metadata_$today_date/subset_slurm_jobs_extract_metadata_and_ingest_it.sh
 ```
 
-Check logs of slurm in `logs_slurm` directory inside `~/sipecam_extract_metadata_$today_date`
+Check logs of slurm inside `~/sipecam_extract_metadata_$today_date`
 
-Check running jobs:
+Check running jobs
 
 ```
 squeue -u madmex_admin
 ```
-
 
 Check logs of metadata extraction command.
 
@@ -182,13 +181,9 @@ Check running jobs:
 squeue -u madmex_admin
 ```
 
-Check logs of slurm in `logs_slurm` directory inside `~/sipecam_extract_metadata_$today_date`
+Check logs of slurm inside `~/sipecam_extract_metadata_$today_date`
 
-Use `scontrol show jobid -dd <jobid>` to get info from job
-
-Check logs of metadata extraction command
-
-
+Use `scontrol show jobid -dd <jobid>` to get info from job.
 
 
 ## Running `sipecam/simex/` docker image in a docker container `jupyterlab` cmd
