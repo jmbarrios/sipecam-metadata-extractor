@@ -3,7 +3,6 @@ import os
 import datetime
 import argparse
 from argparse import RawTextHelpFormatter
-import pathlib
 import itertools
 
 def multiple_file_types(input_directory, *patterns):
@@ -54,10 +53,9 @@ def main():
     with open(sipecam_files_to_extract_metadata, "w+") as file:
         with open(sipecam_subdirectories, "w+") as subdirectory:
             for f in multiple_file_types(input_directory, *suffixes):
-                if pathlib.Path(f).is_file():
-                    file.write(f + "\n")
-                    dirname_f = os.path.dirname(f)
-                    if dirname_f not in list_of_subdirectories:
-                        subdirectory.write(dirname_f + "\n")
-                        list_of_subdirectories.append(dirname_f)
+                file.write(f + "\n")
+                dirname_f = os.path.dirname(f)
+                if dirname_f not in list_of_subdirectories:
+                    subdirectory.write(dirname_f + "\n")
+                    list_of_subdirectories.append(dirname_f)
 
