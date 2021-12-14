@@ -33,8 +33,8 @@ def get_logger_for_writing_logs_to_file(input_file, temp_dirname):
     dirname_file = os.path.join(os.path.dirname(input_file),
                                 temp_dirname)
     os.makedirs(dirname_file, exist_ok=True)
-    logs_filename = os.path.join(dirname_file, "logs_" + \
-                                 pathlib.Path(input_file).stem + ".txt") #trail extension
+    logs_filename = os.path.join(dirname_file,
+                                 pathlib.Path(input_file).stem + ".logs") #trail extension
     pathlib.Path(logs_filename).unlink(missing_ok=True) #remove in case it exists
     return setup_logging(logs_filename)
 
