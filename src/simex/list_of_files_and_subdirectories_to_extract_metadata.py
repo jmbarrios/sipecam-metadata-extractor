@@ -3,6 +3,13 @@ import os
 import datetime
 import argparse
 from argparse import RawTextHelpFormatter
+import pathlib
+import itertools
+
+def multiple_file_types(input_directory, *patterns):
+    return itertools.chain.from_iterable(glob.iglob(input_directory + \
+                                                    "/**/*" + pattern,
+                                                    recursive=True) for pattern in patterns)
 
 def arguments_parse():
     help = """
@@ -13,7 +20,7 @@ will be extracted and list of directories where data will be copied
 Example usage:
 --------------
 
-list_of_files_to_extract_metadata --input_directory /input_dir
+list_of_files_and_subdirectories_to_extract_metadata --input_directory /input_dir
 
 """
 
@@ -32,18 +39,25 @@ def main():
     input_directory = args.input_directory
     shared_volume = "/shared_volume"
     os.makedirs(shared_volume, exist_ok=True)
+    sipecam_subdirectories = os.path.join(shared_volume,
+                                          "sipecam_subdirectories_" + \
+                                          datetime.date.today().strftime("%d-%m-%Y") + \
+                                          ".txt")    
     sipecam_files_to_extract_metadata = os.path.join(shared_volume,
                                         "sipecam_files_to_extract_metadata_from_" + \
                                         datetime.date.today().strftime("%d-%m-%Y") + \
                                         ".txt")
-    wav_extensions = "WAV|wav"
-    jpg_extensions = "JPG|jpg"
-    avi_extensions = "AVI|avi"
-    reg_exp_extensions_for_glob = "*" + "[" + wav_extensions + "|" + \
-                                  jpg_extensions + "|" + \
-                                  avi_extensions + "]"
-    options = os.path.join(input_directory, "**", reg_exp_extensions_for_glob)
-    with open(sipecam_files_to_extract_metadata,"w+") as file:
-        for f in glob.iglob(options, recursive=True):
-            file.write(f + "\n")
+
+    suffixes = ["WAV", "wav", "JPG", "jpg", "AVI", "avi"]
+
+    list_of_subdirectories = []
+    with open(sipecam_files_to_extract_metadata, "w+") as file:
+        with open(sipecam_subdirectories, "w+") as subdirectory:
+            for f in multiple_file_types(input_directory, *suffixes):
+                if pathlib.Path(f).is_file():
+                    file.write(f + "\n")
+                    dirname_f = os.path.dirname(f)
+                    if dirname_f not in list_of_subdirectories:
+                        subdirectory.write(dirname_f + "\n")
+                        list_of_subdirectories.append(dirname_f)
 
