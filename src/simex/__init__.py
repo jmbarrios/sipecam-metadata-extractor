@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 
 def setup_logging(logs_filename):
     """
@@ -8,7 +9,6 @@ def setup_logging(logs_filename):
         logs_filename (str): empty file name, will hold logs.
     Returns:
         logger: instance of logging, commonly named RootLogger.
-        
     """
     logFormatter = logging.Formatter("%(asctime)s [%(levelname)s]  %(message)s")
     file_handler = logging.FileHandler(logs_filename, mode='a')
@@ -32,7 +32,8 @@ def get_logger_for_writing_logs_to_file(input_file):
     dirname_file = os.path.join(os.path.dirname(input_file),
                                 "temp_logs_simex_extract_metadata_and_ingest")
     os.makedirs(dirname_file, exist_ok=True)
-    logs_filename = os.path.join(dirname_file, "logs_" + os.path.basename(input_file))
+    logs_filename = os.path.join(dirname_file, "logs_" + \
+                                 pathlib.Path(input_file).stem + ".txt")
     return setup_logging(logs_filename)
 
 
