@@ -32,11 +32,11 @@ extract_metadata_and_ingest_it --input_file /dir/filename.(WAV|JPG|AVI)
     parser.add_argument("--node",
                         type=str,
                         help="Node nomenclature",
-                        required=False)
+                        required=False)   
     parser.add_argument("--cumulus",
                         type=str,
                         help="Cumulus name",
-                        required=False)
+                        required=False)    
     args = parser.parse_args()
     return args
 
@@ -46,13 +46,13 @@ def main():
     node_nomenclature = args.node
     cumulus_name = args.cumulus
     logger = get_logger_for_writing_logs_to_file(input_file)
-    logger.info("extract metadata and ingest it of %s" % input_file)
+    logger.info("extraction of metadata and ingestion of %s" % input_file)    
     wav_extensions = "WAV|wav"
     jpg_extensions = "JPG|jpg"
     avi_extensions = "AVI|avi"
 
     if re.search(wav_extensions, input_file):
-        logger.info("Read metadata of WAV")
+        logger.info("Read metadata of WAV")        
         dict_metadata_audio = read_metadata_audio.get_metadata(input_file)
         logger.info(dict_metadata_audio)
         type_of_file = "WAV"
@@ -66,6 +66,7 @@ def main():
         dict_metadata_image = read_metadata_image.get_metadata(input_file)
         logger.info(dict_metadata_image)
         type_of_file = "JPG"
+        
     if node_nomenclature:
         logger.info("Node nomenclature was given from cli")
         if cumulus_name:
@@ -74,11 +75,9 @@ def main():
         logger.info("Getting node nomenclature and cumulus name from zendro")
         #node_nomenclature, cumulus_name = get_node_and_cumulus_name_from_zendro()
         node_nomenclature, cumulus_name = "1_3_1_28", "3"
-    #date_of_device_deployment = get_date_of_device_deployment_from_kobo()
+    #date_of_device_deployment = get_date_of_device_deployment_from_kobo()    
     date_of_device_deployment = "2021-10-01"
     output_directory = os.path.join(cumulus_name, node_nomenclature,
                                     date_of_device_deployment,
-                                    type_of_file)
+                                    type_of_file)    
     logger.info("Copying file to %s" % output_directory)
-
-
