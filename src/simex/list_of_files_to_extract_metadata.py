@@ -39,8 +39,9 @@ def main():
     wav_extensions = "WAV|wav"
     jpg_extensions = "JPG|jpg"
     avi_extensions = "AVI|avi"
-    reg_exp_extensions_for_glob = "*" + "[" + wav_extensions + \
-                                  jpg_extensions + avi_extensions + "]"
+    reg_exp_extensions_for_glob = "*" + "[" + wav_extensions + "|" + \
+                                  jpg_extensions + "|" + \
+                                  avi_extensions + "]"
     options = os.path.join(input_directory, "**", reg_exp_extensions_for_glob)
     with open(sipecam_files_to_extract_metadata,"w+") as file:
         for f in glob.iglob(options, recursive=True):
