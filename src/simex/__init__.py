@@ -33,7 +33,8 @@ def get_logger_for_writing_logs_to_file(input_file):
                                 "temp_logs_simex_extract_metadata_and_ingest")
     os.makedirs(dirname_file, exist_ok=True)
     logs_filename = os.path.join(dirname_file, "logs_" + \
-                                 pathlib.Path(input_file).stem + ".txt")
+                                 pathlib.Path(input_file).stem + ".txt") #trail extension
+    pathlib.Path(logs_filename).unlink(missing_ok=True) #remove in case it exists
     return setup_logging(logs_filename)
 
 
