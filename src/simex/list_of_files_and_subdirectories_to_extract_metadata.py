@@ -1,14 +1,10 @@
-import glob
 import os
 import datetime
 import argparse
-from argparse import RawTextHelpFormatter
-import itertools
 
-def multiple_file_types(input_directory, *patterns):
-    return itertools.chain.from_iterable(glob.iglob(input_directory + \
-                                                    "/**/*" + pattern,
-                                                    recursive=True) for pattern in patterns)
+from simex import SUFFIXES_SIPECAM
+from simex.utils.directories_and_files import multiple_file_types
+
 
 def arguments_parse():
     help = """
@@ -41,18 +37,18 @@ def main():
     sipecam_subdirectories = os.path.join(shared_volume,
                                           "sipecam_subdirectories_" + \
                                           datetime.date.today().strftime("%d-%m-%Y") + \
-                                          ".txt")    
+                                          ".txt")
     sipecam_files_to_extract_metadata = os.path.join(shared_volume,
                                         "sipecam_files_to_extract_metadata_from_" + \
                                         datetime.date.today().strftime("%d-%m-%Y") + \
                                         ".txt")
 
-    suffixes = ["WAV", "wav", "JPG", "jpg", "AVI", "avi"]
-
     list_of_subdirectories = []
+
     with open(sipecam_files_to_extract_metadata, "w+") as file:
         with open(sipecam_subdirectories, "w+") as subdirectory:
-            for f in multiple_file_types(input_directory, *suffixes):
+            for f in multiple_file_types(input_directory, *SUFFIXES_SIPECAM,
+                                         recursive=True):
                 file.write(f + "\n")
                 dirname_f = os.path.dirname(f)
                 if dirname_f not in list_of_subdirectories:
