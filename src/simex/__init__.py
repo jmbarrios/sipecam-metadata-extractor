@@ -28,25 +28,30 @@ def setup_logging(logs_filename):
     logger.addHandler(file_handler)
     return logger
 
-def get_logger_for_writing_logs_to_file(input_file, temp_dirname):
+def get_logger_for_writing_logs_to_file(input_file_or_dir, temp_dirname):
     """
     Helper function to setup logging to level specified
     in setup_logging function.
     Args:
-        input_file (str): basename of file that will be processed.
+        input_file_or_dir (str): file or directory that will be processed (includes path of file).
         It's used for creating file with logs.
         temp_dirname (str): name of directory that will hold logs files.
     Returns:
         getLogger instance from logging module.
     """
-    dirname_file = os.path.join(os.path.dirname(input_file),
-                                temp_dirname)
-    os.makedirs(dirname_file, exist_ok=True)
-    input_file_path_lib = pathlib.Path(input_file)
-    logs_filename = os.path.join(dirname_file,
-                                 input_file_path_lib.stem + \
-                                 input_file_path_lib.suffix + \
-                                 ".logs")
+    input_file_or_dir_path_lib = pathlib.Path(input_file_or_dir)
+    if input_file_or_dir_path_lib.suffix:
+        dirname_file = os.path.join(os.path.dirname(input_file_or_dir),
+                                    temp_dirname)
+        os.makedirs(dirname_file, exist_ok=True)        
+        logs_filename = os.path.join(dirname_file,
+                                     input_file_or_dir_path_lib.stem + \
+                                     input_file_or_dir_path_lib.suffix + \
+                                     ".logs")
+    else:
+        dirname_file = os.path.join(input_file_or_dir,
+                                    temp_dirname)
+        logs_filename = dirname_file + ".logs"       
     pathlib.Path(logs_filename).unlink(missing_ok=True) #remove in case it exists
     return setup_logging(logs_filename)
 
