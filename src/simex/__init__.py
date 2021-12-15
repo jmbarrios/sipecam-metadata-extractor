@@ -2,6 +2,15 @@ import logging
 import os
 import pathlib
 
+SUFFIXES_SIPECAM_AUDIO  = ["WAV",
+                           "wav"]
+SUFFIXES_SIPECAM_IMAGES = ["JPG",
+                           "jpg"]
+SUFFIXES_SIPECAM_VIDEO  = ["AVI",
+                           "avi"]
+SUFFIXES_SIPECAM = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES + \
+SUFFIXES_SIPECAM_VIDEO
+
 def setup_logging(logs_filename):
     """
     Function that will open file to hold log of file processed.
