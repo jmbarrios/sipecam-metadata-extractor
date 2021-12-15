@@ -4,9 +4,9 @@ import re
 import argparse
 from argparse import RawTextHelpFormatter
 
-from . import read_metadata_image, read_metadata_audio, \
+from simex import read_metadata_image, read_metadata_audio, \
               read_metadata_video
-from . import get_logger_for_writing_logs_to_file
+from simex import get_logger_for_writing_logs_to_file
 
 def arguments_parse():
     help = """
@@ -45,8 +45,9 @@ def main():
     input_file = args.input_file
     node_nomenclature = args.node
     cumulus_name = args.cumulus
+    dir_logs = "logs_simex_extract_metadata_and_ingest"
     logger = get_logger_for_writing_logs_to_file(input_file,
-                                                 "temp_logs_simex_extract_metadata_and_ingest")
+                                                 dir_logs)
     logger.info("extraction of metadata and ingestion of %s" % input_file)
     wav_extensions = "WAV|wav"
     jpg_extensions = "JPG|jpg"
@@ -67,7 +68,7 @@ def main():
         dict_metadata_image = read_metadata_image.get_metadata(input_file)
         logger.info(dict_metadata_image)
         type_of_file = "JPG"
-
+    ###need to implement next correctly
     if node_nomenclature:
         logger.info("Node nomenclature was given from cli")
         if cumulus_name:
@@ -82,6 +83,5 @@ def main():
                                     date_of_device_deployment,
                                     type_of_file)
     logger.info("Copying file to %s" % output_directory)
-
 
 
