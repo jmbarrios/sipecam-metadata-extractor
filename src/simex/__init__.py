@@ -43,7 +43,7 @@ def get_logger_for_writing_logs_to_file(input_file_or_dir, temp_dirname):
     if input_file_or_dir_path_lib.suffix:
         dirname_file = os.path.join(os.path.dirname(input_file_or_dir),
                                     temp_dirname)
-        os.makedirs(dirname_file, exist_ok=True)        
+        os.makedirs(dirname_file, exist_ok=True)
         logs_filename = os.path.join(dirname_file,
                                      input_file_or_dir_path_lib.stem + \
                                      input_file_or_dir_path_lib.suffix + \
@@ -51,7 +51,7 @@ def get_logger_for_writing_logs_to_file(input_file_or_dir, temp_dirname):
     else:
         dirname_file = os.path.join(input_file_or_dir,
                                     temp_dirname)
-        logs_filename = dirname_file + ".logs"       
+        logs_filename = dirname_file + ".logs"
     pathlib.Path(logs_filename).unlink(missing_ok=True) #remove in case it exists
     return setup_logging(logs_filename)
 
