@@ -38,19 +38,19 @@ def main():
     input_directory = args.input_directory
     dir_logs = "logs_simex_extract_serial_numbers_and_coordinates"
     logger = get_logger_for_writing_logs_to_file(input_directory,
-                                                 dir_logs)    
-    dirname_input_directory = os.path.dirname(input_directory)
+                                                 dir_logs)
+    input_directory_purepath = pathlib.PurePath(input_directory).name
     output_filename = os.path.join(input_directory,
-                                   dirname_input_directory + \
-                                   "_simex_extract_serial_numbers_and_coordinates.json")
+                                   input_directory_purepath) + \
+                                   "_simex_extract_serial_numbers_and_coordinates.json"
     logger.info("extraction of serial number and coordinates")
     logger.info("logs in %s" % output_filename)
-    
-    #pathlib.Path(output_filename).unlink(missing_ok=True) #remove in case it exists
-    dict_output = {} 
-    
+
+    dict_output = {}
+
     def extract_serial_number(filename, type_filename):
         logger.info("extraction of serial number of %s" % filename)
+        serial_number = ""
         if type_filename == "audio":
             serial_number = read_metadata_audio.extract_serial_number(filename)
         else:
@@ -60,22 +60,20 @@ def main():
             logger.info("FAILED extraction of serial number of file")
             logger.info("returning empty serial number")
         return {filename: serial_number}
-        
+
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
         dict_output["Coordinates"] = {}
-        
-        for f in multiple_file_types(input_directory, 
+        dict_serial_number = {}
+        for f in multiple_file_types(input_directory,
                                      *SUFFIXES_TARGET):
+            dict_serial_number[f] = ""
             f_pathlib = pathlib.Path(f)
             if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
                 dict_serial_number = extract_serial_number(f, "audio")
-            if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-                dict_serial_number = extract_serial_number(f, "image")
-            if dict_serial_number[filename]:
-                dict_output["SerialNumber"].update(dict_serial_number)       
-        json.dump(dict_output, dst)    
-    
+            else:
+                if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                    dict_serial_number = extract_serial_number(f, "image")
+            dict_output["SerialNumber"].update(dict_serial_number)
+        json.dump(dict_output, dst)
 
-        
-    
