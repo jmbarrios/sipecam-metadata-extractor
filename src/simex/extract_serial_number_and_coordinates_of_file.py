@@ -44,7 +44,7 @@ def main():
                                    input_directory_purepath) + \
                                    "_simex_extract_serial_numbers_and_coordinates.json"
     logger.info("extraction of serial number and coordinates")
-    logger.info("logs in %s" % output_filename)
+    logger.info("serial number and coordinates in %s" % output_filename)
 
     dict_output = {}
 
@@ -59,14 +59,17 @@ def main():
         if not serial_number:
             logger.info("FAILED extraction of serial number of file")
             logger.info("returning empty serial number")
+        else:
+            logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
         return {filename: serial_number}
 
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
         dict_output["Coordinates"] = {}
         dict_serial_number = {}
-        for f in multiple_file_types(input_directory,
-                                     *SUFFIXES_TARGET):
+        iterator = multiple_file_types(input_directory,
+                                       *SUFFIXES_TARGET)
+        for f in iterator:
             dict_serial_number[f] = ""
             f_pathlib = pathlib.Path(f)
             if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
@@ -74,6 +77,8 @@ def main():
             else:
                 if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                     dict_serial_number = extract_serial_number(f, "image")
-            dict_output["SerialNumber"].update(dict_serial_number)
+            if dict_serial_number[f]:
+                if dict_serial_number[f] not in dict_output["SerialNumber"].values():
+                    dict_output["SerialNumber"].update(dict_serial_number)
         json.dump(dict_output, dst)
 
