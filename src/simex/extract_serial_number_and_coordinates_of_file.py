@@ -13,7 +13,7 @@ SUFFIXES_TARGET = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES
 
 def arguments_parse():
     help = """
-Traverse files in adirectory to extract serial number and coordinates of them.
+Traverse files in a directory to extract serial number and coordinates of them.
 
 --------------
 Example usage:
