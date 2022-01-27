@@ -30,12 +30,16 @@ extract_serial_numbers_and_coordinates --input_dir /dir/
                         required=True,
                         default=None,
                         help="Directory with WAV, JPG, AVI files")
+    parser.add_argument('--mixed',
+                        action='store_true',
+                        help='Directory contains mixture of files?')
     args = parser.parse_args()
     return args
 
 def main():
     args = arguments_parse()
     input_directory = args.input_directory
+    mixed = args.mixed
     dir_logs = "logs_simex_extract_serial_numbers_and_coordinates"
     logger = get_logger_for_writing_logs_to_file(input_directory,
                                                  dir_logs)
@@ -61,7 +65,15 @@ def main():
             logger.info("returning empty serial number")
         else:
             logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
-        return {filename: serial_number}
+        return serial_number
+    
+    def call_extract_serial_number_fun(dict_serial_number, filename):
+        f_pathlib = pathlib.Path(filename)
+        if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+            dict_serial_number[filename] = extract_serial_number(filename, "audio")
+        else:
+            if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                dict_serial_number[filename] = extract_serial_number(filename, "image") 
 
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
@@ -69,16 +81,21 @@ def main():
         dict_serial_number = {}
         iterator = multiple_file_types(input_directory,
                                        *SUFFIXES_TARGET)
-        for f in iterator:
-            dict_serial_number[f] = ""
-            f_pathlib = pathlib.Path(f)
-            if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-                dict_serial_number = extract_serial_number(f, "audio")
-            else:
-                if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-                    dict_serial_number = extract_serial_number(f, "image")
-            if dict_serial_number[f]:
-                if dict_serial_number[f] not in dict_output["SerialNumber"].values():
+        
+        if mixed:
+            for f in iterator:
+                call_extract_serial_number_fun(dict_serial_number, f)
+                if dict_serial_number[f]:
+                    if dict_serial_number[f] not in dict_output["SerialNumber"].values():
+                        dict_output["SerialNumber"].update(dict_serial_number)
+        else:
+            not_success = True
+            while not_success:
+                f = next(iterator)
+                call_extract_serial_number_fun(dict_serial_number, f)
+                if dict_serial_number[f]:
+                    not_success = False
                     dict_output["SerialNumber"].update(dict_serial_number)
+                    
         json.dump(dict_output, dst)
 
