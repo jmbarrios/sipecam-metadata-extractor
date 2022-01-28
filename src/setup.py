@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 cli_list = "list_of_files_and_subdirectories_to_extract_metadata = simex.list_of_files_and_subdirectories_to_extract_metadata:main"
-cli_extract_sn_coord = "extract_serial_number_and_coordinates_of_file = simex.extract_serial_number_and_coordinates_of_file:main"
+cli_extract_sn_coord = "extract_serial_number_datetime_and_coordinates_of_files = simex.extract_serial_number_datetime_and_coordinates_of_files:main"
 cli_extract_met_and_ing = "extract_metadata_and_ingest_it = simex.extract_metadata_and_ingest_it:main"
 
 setup(name="simex", version=0.1,
