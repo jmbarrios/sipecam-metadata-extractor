@@ -4,6 +4,7 @@ import argparse
 import json
 import pathlib
 from operator import itemgetter
+import datetime
 
 from simex import get_logger_for_writing_logs_to_file
 from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES
@@ -67,7 +68,7 @@ def main():
         else:
             logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
         return serial_number
-    
+
     def call_extract_serial_number_of_file_fun(dict_serial_number, filename):
         f_pathlib = pathlib.Path(filename)
         if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
@@ -75,9 +76,9 @@ def main():
         else:
             if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                 dict_serial_number[filename] = extract_serial_number_of_file(filename, "image")
-    
+
     def extract_serial_number_of_files(input_dir,
-                                       mixed, 
+                                       mixed,
                                        d_output,
                                        d_serial_number):
         iterator = multiple_file_types(input_dir,
@@ -98,9 +99,7 @@ def main():
                 if d_serial_number[f]:
                     not_success = False
                     d_output["SerialNumber"].update(d_serial_number)
-                    
-                  
-                    
+
     def extract_datetime(filename, type_filename):
         logger.info("extraction of datetime of %s" % filename)
         datetime_of_file = ""
@@ -135,11 +134,34 @@ def main():
             if d_datetime[f]:
                 if d_datetime[f] not in d_output["Datetime"].values():
                     d_output["Datetime"].update(d_datetime)
+
         def order_dict_datetime():
             return {k: v for k, v in sorted(d_output["Datetime"].items(),
                                             key=itemgetter(1))}
-        d_output["Datetime"] = order_dict_datetime()
-                    
+
+
+        def extract_first_last_dates_and_difference():
+            if len(d_output["Datetime"].keys()) >= 2:
+                first_key, *_, last_key = d_output["Datetime"].keys()
+                d1 = d_output["Datetime"][first_key]
+                d2 = d_output["Datetime"][last_key]
+                d_output["Datetime"] = {first_key: d1,
+                                        last_key : d2
+                                       }
+                format_string_data = "%Y-%m-%d"
+                d1_datetime = datetime.datetime.strptime(d1,
+                                                         format_string_data)
+                d2_datetime = datetime.datetime.strptime(d2,
+                                                         format_string_data)
+                diff_datetimes = d2_datetime - d1_datetime
+                d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes.days
+            else:
+                if len(d_output["Datetime"].keys()) < 1:
+                    logger.info("there were no dates to extract")
+        if not mixed:
+            d_output["Datetime"] = order_dict_datetime()
+            extract_first_last_dates_and_difference()
+
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
         dict_output["Coordinates"] = {}
@@ -147,12 +169,12 @@ def main():
         dict_serial_number = {}
         dict_datetime = {}
         extract_serial_number_of_files(input_directory,
-                                       mixed, 
+                                       mixed,
                                        dict_output,
-                                       dict_serial_number)        
+                                       dict_serial_number)
         extract_datetime_of_files(input_directory,
                                   dict_output,
-                                  dict_datetime)         
-          
+                                  dict_datetime)
+
         json.dump(dict_output, dst)
 
