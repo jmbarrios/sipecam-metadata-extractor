@@ -99,6 +99,8 @@ def main():
                 if d_serial_number[f]:
                     not_success = False
                     d_output["SerialNumber"].update(d_serial_number)
+        if len(d_output["SerialNumber"].keys()) < 1:
+            logger.info("there were no serial numbers to extract")
 
     def extract_datetime(filename, type_filename):
         logger.info("extraction of datetime of %s" % filename)
