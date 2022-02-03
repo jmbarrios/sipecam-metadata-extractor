@@ -135,6 +135,9 @@ def main():
                 if d_datetime[f] not in d_output["Datetime"].values():
                     d_output["Datetime"].update(d_datetime)
 
+        if len(d_output["Datetime"].keys()) < 1:
+            logger.info("there were no dates to extract")
+
         def order_dict_datetime():
             return {k: v for k, v in sorted(d_output["Datetime"].items(),
                                             key=itemgetter(1))}
@@ -155,9 +158,7 @@ def main():
                                                          format_string_data)
                 diff_datetimes = d2_datetime - d1_datetime
                 d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes.days
-            else:
-                if len(d_output["Datetime"].keys()) < 1:
-                    logger.info("there were no dates to extract")
+
         if not mixed:
             d_output["Datetime"] = order_dict_datetime()
             extract_first_last_dates_and_difference()
