@@ -3,6 +3,7 @@ import os
 import argparse
 import json
 import pathlib
+from operator import itemgetter
 
 from simex import get_logger_for_writing_logs_to_file
 from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES
@@ -134,6 +135,10 @@ def main():
             if d_datetime[f]:
                 if d_datetime[f] not in d_output["Datetime"].values():
                     d_output["Datetime"].update(d_datetime)
+        def order_dict_datetime():
+            return {k: v for k, v in sorted(d_output["Datetime"].items(),
+                                            key=itemgetter(1))}
+        d_output["Datetime"] = order_dict_datetime()
                     
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
