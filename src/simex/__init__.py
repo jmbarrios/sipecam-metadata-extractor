@@ -40,7 +40,7 @@ def get_logger_for_writing_logs_to_file(input_file_or_dir, temp_dirname):
         getLogger instance from logging module.
     """
     input_file_or_dir_path_lib = pathlib.Path(input_file_or_dir)
-    if input_file_or_dir_path_lib.suffix:
+    if input_file_or_dir_path_lib.suffix: #is file
         dirname_file = os.path.join(os.path.dirname(input_file_or_dir),
                                     temp_dirname)
         os.makedirs(dirname_file, exist_ok=True)
@@ -48,7 +48,7 @@ def get_logger_for_writing_logs_to_file(input_file_or_dir, temp_dirname):
                                      input_file_or_dir_path_lib.stem + \
                                      input_file_or_dir_path_lib.suffix + \
                                      ".logs")
-    else:
+    else: #is directory
         dirname_file = os.path.join(input_file_or_dir,
                                     temp_dirname)
         logs_filename = dirname_file + ".logs"
