@@ -54,13 +54,14 @@ def main():
 
     dict_output = {}
 
-    def extract_serial_number_of_file(filename, type_filename):
+    def extract_serial_number(filename):
+        f_pathlib = pathlib.Path(filename)
         logger.info("extraction of serial number of %s" % filename)
         serial_number = ""
-        if type_filename == "audio":
+        if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
             serial_number = read_metadata_audio.extract_serial_number(filename)
         else:
-            if type_filename == "image":
+            if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                 serial_number = read_metadata_image.extract_serial_number(filename)
         if not serial_number:
             logger.info("FAILED extraction of serial number of file")
@@ -68,14 +69,6 @@ def main():
         else:
             logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
         return serial_number
-
-    def call_extract_serial_number_of_file_fun(dict_serial_number, filename):
-        f_pathlib = pathlib.Path(filename)
-        if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-            dict_serial_number[filename] = extract_serial_number_of_file(filename, "audio")
-        else:
-            if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-                dict_serial_number[filename] = extract_serial_number_of_file(filename, "image")
 
     def extract_serial_number_of_files(input_dir,
                                        mixed,
@@ -85,8 +78,7 @@ def main():
                                        *SUFFIXES_TARGET)
         if mixed:
             for f in iterator:
-                call_extract_serial_number_of_file_fun(d_serial_number,
-                                                       f)
+                d_serial_number[f] = extract_serial_number(f)
                 if d_serial_number[f]:
                     if d_serial_number[f] not in d_output["SerialNumber"].values():
                         d_output["SerialNumber"].update(d_serial_number)
@@ -94,21 +86,21 @@ def main():
             not_success = True
             while not_success:
                 f = next(iterator)
-                call_extract_serial_number_of_file_fun(d_serial_number,
-                                                       f)
+                d_serial_number[f] = extract_serial_number(f)
                 if d_serial_number[f]:
                     not_success = False
                     d_output["SerialNumber"].update(d_serial_number)
         if len(d_output["SerialNumber"].keys()) < 1:
             logger.info("there were no serial numbers to extract")
 
-    def extract_datetime(filename, type_filename):
+    def extract_datetime(filename):
+        f_pathlib = pathlib.Path(filename)
         logger.info("extraction of datetime of %s" % filename)
         datetime_of_file = ""
-        if type_filename == "audio":
+        if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
             datetime_of_file = read_metadata_audio.extract_datetime_original(filename)
         else:
-            if type_filename == "image":
+            if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                 datetime_of_file = read_metadata_image.extract_datetime_original(filename)
         if not datetime_of_file:
             logger.info("FAILED extraction of datetime of file")
@@ -117,22 +109,13 @@ def main():
             logger.info("SUCCESSFUL extraction of datetime of %s" % filename)
         return datetime_of_file
 
-    def call_extract_datetime_fun(dict_datetime, filename):
-        f_pathlib = pathlib.Path(filename)
-        if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-            dict_datetime[filename] = extract_datetime(filename, "audio")
-        else:
-            if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-                dict_datetime[filename] = extract_datetime(filename, "image")
-
     def extract_datetime_of_files(input_dir,
                                   d_output,
                                   d_datetime):
         iterator = multiple_file_types(input_dir,
                                        *SUFFIXES_TARGET)
         for f in iterator:
-            call_extract_datetime_fun(d_datetime,
-                                      f)
+            d_datetime[f] = extract_datetime(f)
             if d_datetime[f]:
                 if d_datetime[f] not in d_output["Datetime"].values():
                     d_output["Datetime"].update(d_datetime)
@@ -143,7 +126,6 @@ def main():
         def order_dict_datetime():
             return {k: v for k, v in sorted(d_output["Datetime"].items(),
                                             key=itemgetter(1))}
-
 
         def extract_first_last_dates_and_difference():
             if len(d_output["Datetime"].keys()) >= 2:
