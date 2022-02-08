@@ -69,9 +69,9 @@ def main():
     mixed = args.mixed
     parallel = args.parallel
     number_of_processes = args.number_of_processes
-    dir_logs = "logs_simex_extract_serial_numbers_datetime_and_coordinates"
+    filename_for_logs = "logs_simex_extract_serial_numbers_datetime_and_coordinates"
     logger = get_logger_for_writing_logs_to_file(input_directory,
-                                                 dir_logs)
+                                                 filename_for_logs)
     input_directory_purepath = pathlib.PurePath(input_directory).name
     output_filename = os.path.join(input_directory,
                                    input_directory_purepath) + \
@@ -145,7 +145,7 @@ def main():
                     else:
                         logger.info("SUCCESSFUL extraction of datetime of %s" % filename)
                 #see: https://stackoverflow.com/questions/3494906/how-do-i-merge-a-list-of-dicts-into-a-single-dict
-                d_output["Datetime"] = reduce(lambda a, b: {**a, **b}, res_map)
+                d_output["Datetimes"] = reduce(lambda a, b: {**a, **b}, res_map)
         else:
             for filename in iterator:
                 logger.info("extraction of datetime of %s" % filename)
@@ -156,16 +156,16 @@ def main():
                     logger.info("returning empty datetime")
                 else:
                     logger.info("SUCCESSFUL extraction of datetime of %s" % filename)
-                    d_output["Datetime"].update(res_extract_datetime)
+                    d_output["Datetimes"].update(res_extract_datetime)
 
-        if len(d_output["Datetime"].keys()) < 1:
+        if len(d_output["Datetimes"].keys()) < 1:
             logger.info("there were no dates to extract")
 
         def order_dict_datetime():
             """
             Helper function to order dictionary Datetime using datetimes.
             """
-            return {k: v for k, v in sorted(d_output["Datetime"].items(),
+            return {k: v for k, v in sorted(d_output["Datetimes"].items(),
                                             key=itemgetter(1))}
 
         def extract_first_last_dates_and_difference():
@@ -174,11 +174,11 @@ def main():
             only first, last and if there are more than two datetimes then
             computes difference between first and last datetimes in days.
             """
-            if len(d_output["Datetime"].keys()) >= 2:
-                first_key, *_, last_key = d_output["Datetime"].keys()
-                d1_str = d_output["Datetime"][first_key]
-                d2_str = d_output["Datetime"][last_key]
-                d_output["Datetime"] = {first_key: d1_str,
+            if len(d_output["Datetimes"].keys()) >= 2:
+                first_key, *_, last_key = d_output["Datetimes"].keys()
+                d1_str = d_output["Datetimes"][first_key]
+                d2_str = d_output["Datetimes"][last_key]
+                d_output["Datetimes"] = {first_key: d1_str,
                                         last_key : d2_str
                                        }
                 format_string_data = "%Y-%m-%d"
@@ -190,13 +190,13 @@ def main():
                 d_output["DaysBetweenFirstAndLastDatetime"] = diff_datetimes.days
 
         if not mixed: #directory with files from one device.
-            d_output["Datetime"] = order_dict_datetime()
+            d_output["Datetimes"] = order_dict_datetime()
             extract_first_last_dates_and_difference()
 
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
         dict_output["Coordinates"] = {}
-        dict_output["Datetime"] = {}
+        dict_output["Datetimes"] = {}
         dict_serial_number = {}
         dict_datetime = {}
         extract_serial_number_of_files(input_directory,
