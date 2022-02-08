@@ -4,17 +4,13 @@ import json
 import pathlib
 import datetime
 
-from sgqlc.operation import Operation
-from sgqlc.endpoint.http import HTTPEndpoint
-
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils import zendro
-from simex.sipecam_zendro_schema import sipecam_zendro_schema as schema
 
 def arguments_parse():
     help = """
 Copy files to directory of server. Path that will have the files is created
-according to: 
+according to:
 id_cumulus/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
 
 --------------
@@ -66,23 +62,14 @@ def main():
 
     logger.info("DaysBetweenFirstAndLastDatetime: %s" % diff_datetimes)
 
-    token = zendro.get_token()
+    endpoint, op = zendro.get_sgqlc_endpoint_and_operation_for_query()
 
-    headers = {
-        "Authorization": "Bearer " + token,
-        "Accept": "application/json",
-        'Content-Type': 'application/json; charset=utf-8'
-    }
-
-    endpoint = HTTPEndpoint(zendro.get_zendro_url_for_gql(),
-                            headers)
-    op = Operation(schema.Query)
     op.physical_devices(pagination={"limit": 0},
                         search={"field": "serial_number",
                                 "value": serial_number,
                                 "operator": "like"})
     op.physical_devices.device_deployments_filter(pagination={"limit": 0}
-                                                 ).date_deployment() #sgqlc selection type
+                                                 ).date_deployment() #op has type sgqlc selection
     logger.info("Query to Zendro GQL: %s" % op)
     query_result = endpoint(op)
     device_deploymentsFilter = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
