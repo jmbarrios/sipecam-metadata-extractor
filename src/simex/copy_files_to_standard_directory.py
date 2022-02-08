@@ -13,9 +13,9 @@ from simex.sipecam_zendro_schema import sipecam_zendro_schema as schema
 
 def arguments_parse():
     help = """
-Extract metadata of file, fill fields of File model in
-Zendro and copy file to directory of server. Write logs for each
-step.
+Copy files to directory of server. Path that will have the files is created
+according to: 
+id_cumulus/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
 
 --------------
 Example usage:
