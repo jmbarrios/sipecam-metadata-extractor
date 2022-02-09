@@ -56,16 +56,16 @@ def query_for_copy_files_to_standard_directory(serial_number,
     query {
       physical_devices(pagination: {limit: 0}, 
           search: {field: serial_number, 
-                   value: "HLPXGM09048890", 
+                   value: "<serial_number>", 
                    operator: like}) 
                    {device_deploymentsFilter(pagination: {limit: 0}, 
                                              search: {operator: and, 
                                                  search: [{field: date_deployment, 
-                                                           value: "2021-07-28", 
+                                                           value: "<first_date>", 
                                                            valueType: String, 
                                                            operator: gte}, 
                                                          {field: date_deployment, 
-                                                          value: "2021-08-26", 
+                                                          value: "<second_date>", 
                                                           valueType: String, 
                                                           operator: lte}]
                                                      }) 
