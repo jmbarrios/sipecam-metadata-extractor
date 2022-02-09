@@ -112,10 +112,10 @@ def query_alternative_auxiliar_for_copy_files_to_standard_directory(serial_numbe
     """
     Execute in GQL of Zendro:
     query {
-      physical_devices(pagination: {limit: 0}, 
-                       search: {field: serial_number, 
-                       value: "<serial_number>", 
-                       operator: like}) 
+      physical_devices(pagination: {limit: 0},
+                       search: {field: serial_number,
+                       value: "<serial_number>",
+                       operator: like})
                        {
                         device_deploymentsFilter(pagination: {limit: 0})
                                                  {
@@ -138,14 +138,14 @@ def query_alternative_for_copy_files_to_standard_directory(serial_number,
     """
     Execute in GQL of Zendro:
     query {
-      physical_devices(pagination: {limit: 0}, 
-                       search: {field: serial_number, 
-                                value: "<serial_number>", 
+      physical_devices(pagination: {limit: 0},
+                       search: {field: serial_number,
+                                value: "<serial_number>",
                                 operator: like})
                        {
-                        device_deploymentsFilter(pagination: {limit: 0}, 
-                                                 search: {field: date_deployment, 
-                                                 value: "<date_for_filter>", 
+                        device_deploymentsFilter(pagination: {limit: 0},
+                                                 search: {field: date_deployment,
+                                                 value: "<date_for_filter>",
                                                  operator: eq})
                                                  {
                                                   node {
@@ -157,7 +157,7 @@ def query_alternative_for_copy_files_to_standard_directory(serial_number,
                                                   date_deployment
                                                  }
                        }
-    }    
+    }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
     op.physical_devices(pagination={"limit": 0},
