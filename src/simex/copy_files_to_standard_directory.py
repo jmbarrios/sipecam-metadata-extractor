@@ -39,7 +39,7 @@ def main():
     input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_dates).name
     file_with_serial_number_and_dates = os.path.join(directory_with_file_of_serial_number_and_dates,
                                                          input_directory_purepath) + \
-                                                         "_simex_extract_serial_numbers_datetime_and_coordinates.json"
+                                                         "_simex_extract_serial_numbers_datetimes.json"
 
     with open(file_with_serial_number_and_dates, 'r') as f:
         dict_source = json.load(f)
