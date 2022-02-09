@@ -51,6 +51,31 @@ def get_sgqlc_endpoint_and_operation_for_query():
 def query_for_copy_files_to_standard_directory(serial_number,
                                                first_date, 
                                                second_date):
+    """
+    Execute in GQL of Zendro:
+    query {
+     physical_devices(pagination: {limit: 0}, search: {field: serial_number, 
+                     value: "<serial_number>", operator: like}) 
+      {
+       device_deploymentsFilter(pagination: {limit: 0},
+        search: { operator: and,
+                  search: [
+                           {field: date_deployment, 
+                           value: "<first_date>", 
+                           operator: gte},
+                           {field: date_deployment, 
+                           value: "<second_date>", 
+                           valueType: String, 
+                           operator:lte}
+                          ]
+                })
+            {
+            node_id
+            cumulus_id
+            }
+       }
+    }
+    """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
 
     op.physical_devices(pagination={"limit": 0},
