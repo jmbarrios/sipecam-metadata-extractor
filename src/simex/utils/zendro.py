@@ -49,26 +49,26 @@ def get_sgqlc_endpoint_and_operation_for_query():
             Operation(sipecam_zendro_schema.Query))
 
 def query_for_copy_files_to_standard_directory(serial_number,
-                                               first_date, 
+                                               first_date,
                                                second_date):
     """
     Execute in GQL of Zendro:
     query {
-      physical_devices(pagination: {limit: 0}, 
-          search: {field: serial_number, 
-                   value: "<serial_number>", 
-                   operator: like}) 
-                   {device_deploymentsFilter(pagination: {limit: 0}, 
-                                             search: {operator: and, 
-                                                 search: [{field: date_deployment, 
-                                                           value: "<first_date>", 
-                                                           valueType: String, 
-                                                           operator: gte}, 
-                                                         {field: date_deployment, 
-                                                          value: "<second_date>", 
-                                                          valueType: String, 
+      physical_devices(pagination: {limit: 0},
+          search: {field: serial_number,
+                   value: "<serial_number>",
+                   operator: like})
+                   {device_deploymentsFilter(pagination: {limit: 0},
+                                             search: {operator: and,
+                                                 search: [{field: date_deployment,
+                                                           value: "<first_date>",
+                                                           valueType: String,
+                                                           operator: gte},
+                                                         {field: date_deployment,
+                                                          value: "<second_date>",
+                                                          valueType: String,
                                                           operator: lte}]
-                                                     }) 
+                                                     })
                                                     {node {
                                                          nomenclatura
                                                           }
@@ -86,7 +86,7 @@ def query_for_copy_files_to_standard_directory(serial_number,
                         search={"field": "serial_number",
                                 "value": serial_number,
                                 "operator": "like"})
-    
+
     op.physical_devices.device_deployments_filter(pagination={"limit": 0},
                                                   search={"operator": "and",
                                                           "search": [{"field"   : "date_deployment",
@@ -102,7 +102,7 @@ def query_for_copy_files_to_standard_directory(serial_number,
                                                   )
     op.physical_devices.device_deployments_filter.node.nomenclatura() #after this line op has type sgqlc selection
     op.physical_devices.device_deployments_filter.cumulus.name()
-    op.physical_devices.device_deployments_filter.date_deployment() 
+    op.physical_devices.device_deployments_filter.date_deployment()
     query_result = endpoint(op)
     return (query_result, op)
 
