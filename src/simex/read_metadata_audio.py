@@ -77,7 +77,7 @@ def get_datetime(comment):
     date_of_file = match_date.group(1)
     format_string_data = "%d/%m/%Y"
     return date.isoformat(datetime.strptime(date_of_file, 
-                                            format_string_data))
+                                            format_string_data)) #convert to Y-m-d format
 
 def extract_datetime_original(filename):
     comment_metadata = get_comment(filename)
