@@ -68,15 +68,20 @@ def main():
                                                                                first_date_str,
                                                                                second_date_str)
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
-    device_deploymentsFilter = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
-    list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter]
-
-    [logger.info(d) for d in list_dates_device_deployment]
-
-    format_string_data = "%Y-%m-%d"
-
-    list_datetimes_device_deployment = [datetime.datetime.strptime(d,
-                                                                   format_string_data) for d in list_dates_device_deployment]
-
-
-    [logger.info(d) for d in list_datetimes_device_deployment]
+    
+    device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
+    
+    if len(device_deploymentsFilter_list) == 1:
+        device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
+        nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
+        cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
+        date_of_deployment = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
+        logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
+        logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
+                                                                                       nomenclature_node,
+                                                                                       cumulus_name,
+                                                                                       date_of_deployment)
+                   )
+        
+    #list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter_list]
+    
