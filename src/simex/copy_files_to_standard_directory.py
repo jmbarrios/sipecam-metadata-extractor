@@ -17,31 +17,31 @@ id_cumulus/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|
 Example usage:
 --------------
 
-copy_files_to_standard_directory --directory_with_file_of_serial_number_and_datetimes /dir/filename.json
+copy_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/filename.json
 
 """
     parser = argparse.ArgumentParser(description=help,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--directory_with_file_of_serial_number_and_datetimes",
+    parser.add_argument("--directory_with_file_of_serial_number_and_dates",
                         required=True,
                         default=None,
-                        help="Directory that has json file with serial number and datetimes")
+                        help="Directory that has json file with serial number and dates")
     args = parser.parse_args()
     return args
 
 
 def main():
     args = arguments_parse()
-    directory_with_file_of_serial_number_and_datetimes = args.directory_with_file_of_serial_number_and_datetimes
+    directory_with_file_of_serial_number_and_dates = args.directory_with_file_of_serial_number_and_dates
     filename_for_logs = "logs_simex_copy_files_to_standard_directory"
-    logger = get_logger_for_writing_logs_to_file(directory_with_file_of_serial_number_and_datetimes,
+    logger = get_logger_for_writing_logs_to_file(directory_with_file_of_serial_number_and_dates,
                                                  filename_for_logs)
-    input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_datetimes).name
-    file_with_serial_number_and_datetimes = os.path.join(directory_with_file_of_serial_number_and_datetimes,
+    input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_dates).name
+    file_with_serial_number_and_dates = os.path.join(directory_with_file_of_serial_number_and_dates,
                                                          input_directory_purepath) + \
                                                          "_simex_extract_serial_numbers_datetime_and_coordinates.json"
 
-    with open(file_with_serial_number_and_datetimes, 'r') as f:
+    with open(file_with_serial_number_and_dates, 'r') as f:
         dict_source = json.load(f)
 
     dict_source_serial_number = dict_source["SerialNumber"]
