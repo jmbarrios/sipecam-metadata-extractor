@@ -32,13 +32,13 @@ def extract_datetime(filename):
 
 def arguments_parse():
     help = """
-Traverse files in a directory to extract serial number and coordinates of them.
+Traverse files in a directory to extract serial number and datetimes of them.
 
 --------------
 Example usage:
 --------------
 
-extract_serial_numbers_datetime_and_coordinates_of_files --input_dir /dir/
+extract_serial_numbers_datetimes_of_files --input_dir /dir/
 
 """
 
@@ -69,15 +69,15 @@ def main():
     mixed = args.mixed
     parallel = args.parallel
     number_of_processes = args.number_of_processes
-    filename_for_logs = "logs_simex_extract_serial_numbers_datetime_and_coordinates"
+    filename_for_logs = "logs_simex_extract_serial_numbers_datetimes"
     logger = get_logger_for_writing_logs_to_file(input_directory,
                                                  filename_for_logs)
     input_directory_purepath = pathlib.PurePath(input_directory).name
     output_filename = os.path.join(input_directory,
                                    input_directory_purepath) + \
-                                   "_simex_extract_serial_numbers_datetime_and_coordinates.json"
-    logger.info("extraction of serial number, datetime and coordinates")
-    logger.info("logs for extraction of serial number, datetime and coordinates in %s" % output_filename)
+                                   "_simex_extract_serial_numbers_datetimes.json"
+    logger.info("extraction of serial numbers and datetimes")
+    logger.info("logs for extraction of serial numbers and datetimes in %s" % output_filename)
 
     dict_output = {}
 
@@ -195,7 +195,6 @@ def main():
 
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
-        dict_output["Coordinates"] = {}
         dict_output["Datetimes"] = {}
         dict_serial_number = {}
         dict_datetime = {}
