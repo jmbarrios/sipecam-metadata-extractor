@@ -5,7 +5,7 @@ import pathlib
 import datetime
 
 from simex import get_logger_for_writing_logs_to_file
-from simex.utils import zendro
+from simex.utils.zendro import query_for_copy_files_to_standard_directory
 
 def arguments_parse():
     help = """
@@ -45,33 +45,29 @@ def main():
         dict_source = json.load(f)
 
     dict_source_serial_number = dict_source["SerialNumber"]
-    dict_source_datetimes = dict_source["Datetimes"]
-    diff_datetimes = dict_source["DaysBetweenFirstAndLastDatetime"]
+    dict_source_dates = dict_source["Datetimes"]
+    diff_dates = dict_source["DaysBetweenFirstAndLastDatetime"]
 
     filename_source, serial_number = tuple(dict_source_serial_number.items())[0]
 
     logger.info("File %s has serial number %s" % (filename_source, serial_number))
+    
+    tup_source_dates = tuple(dict_source_dates.items())
+    
+    filename_source_first_date,  first_date_str  = tup_source_dates[0]
+    filename_source_second_date, second_date_str = tup_source_dates[1]
 
-    filename_source_first_datetime,  first_datetime  = tuple(dict_source_datetimes.items())[0]
-    filename_source_second_datetime, second_datetime = tuple(dict_source_datetimes.items())[1]
+    logger.info("File %s has datetime %s" % (filename_source_first_date,
+                                             first_date_str))
+    logger.info("File %s has datetime %s" % (filename_source_second_date,
+                                             second_date_str))
 
-    logger.info("File %s has datetime %s" % (filename_source_first_datetime,
-                                             first_datetime))
-    logger.info("File %s has datetime %s" % (filename_source_second_datetime,
-                                             second_datetime))
+    logger.info("DaysBetweenFirstAndLastDatetime: %s" % diff_dates)
 
-    logger.info("DaysBetweenFirstAndLastDatetime: %s" % diff_datetimes)
-
-    endpoint, op = zendro.get_sgqlc_endpoint_and_operation_for_query()
-
-    op.physical_devices(pagination={"limit": 0},
-                        search={"field": "serial_number",
-                                "value": serial_number,
-                                "operator": "like"})
-    op.physical_devices.device_deployments_filter(pagination={"limit": 0}
-                                                 ).date_deployment() #op has type sgqlc selection
-    logger.info("Query to Zendro GQL: %s" % op)
-    query_result = endpoint(op)
+    query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+                                                                               first_date_str,
+                                                                               second_date_str)
+    logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
     device_deploymentsFilter = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
     list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter]
 
