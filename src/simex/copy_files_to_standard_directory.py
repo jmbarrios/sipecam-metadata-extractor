@@ -58,8 +58,6 @@ def main():
 
     filename_source_first_date,  first_date_str  = tup_source_dates[0]
     filename_source_second_date, second_date_str = tup_source_dates[1]
-    
-    first_date_str = "2021-07-29"
 
     logger.info("File %s has datetime %s" % (filename_source_first_date,
                                              first_date_str))
@@ -121,13 +119,13 @@ def main():
                                                                                                        nomenclature_node,
                                                                                                        cumulus_name,
                                                                                                        date_of_deployment)
-                                   )                        
+                                   )
                     except Exception as e:
-                        print(e)
-                        print("unsuccessful query %s" % operation_sgqlc)                    
+                        logger.info(e)
+                        logger.info("unsuccessful query %s" % operation_sgqlc)
                 except Exception as e:
-                    print(e)
-                    print("unsuccessful query %s" % operation_sgqlc)                
+                    logger.info(e)
+                    logger.info("unsuccessful query %s" % operation_sgqlc)
             else: #len of list is >=1 then there's no unique date of deployment of device
                 logger.info("There's no unique date of deployment and can not select one date to create standard directory")
     except Exception as e:
