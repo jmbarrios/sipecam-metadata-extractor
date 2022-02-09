@@ -5,13 +5,15 @@ import pathlib
 import datetime
 
 from simex import get_logger_for_writing_logs_to_file
-from simex.utils.zendro import query_for_copy_files_to_standard_directory
+from simex.utils.zendro import query_for_copy_files_to_standard_directory, \
+query_alternative_auxiliar_for_copy_files_to_standard_directory, \
+query_alternative_for_copy_files_to_standard_directory
 
 def arguments_parse():
     help = """
 Copy files to directory of server. Path that will have the files is created
 according to:
-id_cumulus/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
+cumulus_name/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
 
 --------------
 Example usage:
@@ -56,6 +58,8 @@ def main():
 
     filename_source_first_date,  first_date_str  = tup_source_dates[0]
     filename_source_second_date, second_date_str = tup_source_dates[1]
+    
+    first_date_str = "2021-07-29"
 
     logger.info("File %s has datetime %s" % (filename_source_first_date,
                                              first_date_str))
@@ -69,19 +73,63 @@ def main():
                                                                                second_date_str)
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
 
-    device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
-
-    if len(device_deploymentsFilter_list) == 1:
-        device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
-        nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
-        cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
-        date_of_deployment = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
-        logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
-        logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
-                                                                                       nomenclature_node,
-                                                                                       cumulus_name,
-                                                                                       date_of_deployment)
-                   )
-
-    #list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter_list]
-
+    try:
+        device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
+        if len(device_deploymentsFilter_list) == 1:
+            device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
+            nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
+            cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
+            date_of_deployment = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
+            logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
+            logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
+                                                                                           nomenclature_node,
+                                                                                           cumulus_name,
+                                                                                           date_of_deployment)
+                       )
+        else:
+            if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
+                logger.info("last query wasn't successful")
+                query_result, operation_sgqlc = query_alternative_auxiliar_for_copy_files_to_standard_directory(serial_number)
+                logger.info("Query alternative auxiliar to Zendro GQL: %s" % operation_sgqlc)
+                try:
+                    device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
+                    format_string_data = "%Y-%m-%d"
+                    list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter_list]
+                    list_datetimes_device_deployment = [datetime.datetime.strptime(d["date_deployment"].split('T')[0],
+                                                                                   format_string_data) for d in device_deploymentsFilter_list]
+                    first_datetime  = datetime.datetime.strptime(first_date_str, format_string_data)
+                    second_datetime = datetime.datetime.strptime(second_date_str, format_string_data)
+                    diff_dates_datetime = datetime.timedelta(diff_dates)
+                    list_datetimes_device_deployment_increased = [d + diff_dates_datetime/2 for d in list_datetimes_device_deployment]
+                    k = 0
+                    for datetimes_device_deployment in list_datetimes_device_deployment_increased:
+                        if first_datetime <= datetimes_device_deployment and datetimes_device_deployment <= second_datetime:
+                            idx_date = k
+                        k += 1
+                    date_for_filter = device_deploymentsFilter_list[idx_date]["date_deployment"]
+                    query_result, operation_sgqlc = query_alternative_for_copy_files_to_standard_directory(serial_number,
+                                                                                                           date_for_filter)
+                    logger.info("Query alternative to Zendro GQL: %s" % operation_sgqlc)
+                    try:
+                        device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
+                        device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
+                        nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
+                        cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
+                        date_of_deployment = list_dates_device_deployment[idx_date]
+                        logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
+                        logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
+                                                                                                       nomenclature_node,
+                                                                                                       cumulus_name,
+                                                                                                       date_of_deployment)
+                                   )                        
+                    except Exception as e:
+                        print(e)
+                        print("unsuccessful query %s" % operation_sgqlc)                    
+                except Exception as e:
+                    print(e)
+                    print("unsuccessful query %s" % operation_sgqlc)                
+            else: #len of list is >=1 then there's no unique date of deployment of device
+                logger.info("There's no unique date of deployment and can not select one date to create standard directory")
+    except Exception as e:
+        logger.info(e)
+        logger.info("unsuccessful query %s" % operation_sgqlc)
