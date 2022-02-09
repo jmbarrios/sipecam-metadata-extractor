@@ -54,27 +54,31 @@ def query_for_copy_files_to_standard_directory(serial_number,
     """
     Execute in GQL of Zendro:
     query {
-     physical_devices(pagination: {limit: 0}, search: {field: serial_number, 
-                     value: "<serial_number>", operator: like}) 
-      {
-       device_deploymentsFilter(pagination: {limit: 0},
-        search: { operator: and,
-                  search: [
-                           {field: date_deployment, 
-                           value: "<first_date>", 
-                           operator: gte},
-                           {field: date_deployment, 
-                           value: "<second_date>", 
-                           valueType: String, 
-                           operator:lte}
-                          ]
-                })
-            {
-            node_id
-            cumulus_id
-            }
-       }
-    }
+      physical_devices(pagination: {limit: 0}, 
+          search: {field: serial_number, 
+                   value: "HLPXGM09048890", 
+                   operator: like}) 
+                   {device_deploymentsFilter(pagination: {limit: 0}, 
+                                             search: {operator: and, 
+                                                 search: [{field: date_deployment, 
+                                                           value: "2021-07-28", 
+                                                           valueType: String, 
+                                                           operator: gte}, 
+                                                         {field: date_deployment, 
+                                                          value: "2021-08-26", 
+                                                          valueType: String, 
+                                                          operator: lte}]
+                                                     }) 
+                                                    {node {
+                                                         nomenclatura
+                                                          }
+                                                     cumulus {
+                                                         name
+                                                          }
+                                                     date_deployment
+                                                     }
+                    }
+          }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
 
