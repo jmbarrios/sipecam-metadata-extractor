@@ -51,9 +51,9 @@ def main():
     filename_source, serial_number = tuple(dict_source_serial_number.items())[0]
 
     logger.info("File %s has serial number %s" % (filename_source, serial_number))
-    
+
     tup_source_dates = tuple(dict_source_dates.items())
-    
+
     filename_source_first_date,  first_date_str  = tup_source_dates[0]
     filename_source_second_date, second_date_str = tup_source_dates[1]
 
@@ -68,9 +68,9 @@ def main():
                                                                                first_date_str,
                                                                                second_date_str)
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
-    
+
     device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
-    
+
     if len(device_deploymentsFilter_list) == 1:
         device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
         nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
@@ -82,6 +82,6 @@ def main():
                                                                                        cumulus_name,
                                                                                        date_of_deployment)
                    )
-        
+
     #list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter_list]
-    
+
