@@ -3,11 +3,16 @@ import argparse
 import json
 import pathlib
 import datetime
+import shutil
 
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.zendro import query_for_copy_files_to_standard_directory, \
 query_alternative_auxiliar_for_copy_files_to_standard_directory, \
 query_alternative_for_copy_files_to_standard_directory
+from simex.utils.directories_and_files import multiple_file_types
+from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO
+
+SUFFIXES_TARGET = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES + SUFFIXES_SIPECAM_VIDEO
 
 def arguments_parse():
     help = """
@@ -28,6 +33,10 @@ copy_files_to_standard_directory --directory_with_file_of_serial_number_and_date
                         required=True,
                         default=None,
                         help="Directory that has json file with serial number and dates")
+    parser.add_argument("--path_for_standard_directory",
+                        required=True,
+                        default=None,
+                        help="Directory that has json file with serial number and dates")    
     args = parser.parse_args()
     return args
 
@@ -35,6 +44,7 @@ copy_files_to_standard_directory --directory_with_file_of_serial_number_and_date
 def main():
     args = arguments_parse()
     directory_with_file_of_serial_number_and_dates = args.directory_with_file_of_serial_number_and_dates
+    path_for_standard_directory = args.path_for_standard_directory
     filename_for_logs = "logs_simex_copy_files_to_standard_directory"
     logger = get_logger_for_writing_logs_to_file(directory_with_file_of_serial_number_and_dates,
                                                  filename_for_logs)
@@ -70,6 +80,28 @@ def main():
                                                                                first_date_str,
                                                                                second_date_str)
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
+    
+    def copy_files_to_standard_dir(src_dir, dst_dir):
+        iterator = multiple_file_types(src_dir,
+                                       *SUFFIXES_TARGET)
+        for filename in iterator:
+            f_pathlib = pathlib.Path(filename)
+            if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+                standard_dir = os.path.join(dst_dir,
+                                            "audios",
+                                            f_pathlib.parent.name)
+                logger.info("File %s will be copied to: %s" % (filename, standard_dir))
+            else:
+                if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                    standard_dir = os.path.join(dst_dir,
+                                                "images")
+                    logger.info("File %s will be copied to: %s" % (filename, standard_dir))                    
+                    
+                else:
+                    if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                        standard_dir = os.path.join(dst_dir,
+                                                    "videos")
+                        logger.info("File %s will be copied to: %s" % (filename, standard_dir))          
 
     try:
         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
@@ -84,6 +116,15 @@ def main():
                                                                                            cumulus_name,
                                                                                            date_of_deployment)
                        )
+            path_with_files_copied = os.path.join(path_for_standard_directory,
+                                                  cumulus_name,
+                                                  nomenclature_node,
+                                                  date_of_deployment)
+            logger.info("path where files will be copied: %s" % path_with_files_copied)
+            os.makedirs(path_with_files_copied, exist_ok=True)
+            copy_files_to_standard_dir(directory_with_file_of_serial_number_and_dates,
+                                       path_with_files_copied)
+            
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
                 logger.info("last query wasn't successful")
