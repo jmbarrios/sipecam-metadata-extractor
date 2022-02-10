@@ -110,16 +110,16 @@ def main():
         iterator = multiple_file_types(input_dir,
                                        *SUFFIXES_TARGET)
         if mixed: #directory with files from several devices.
-            for f in iterator:
-                d_serial_number[f] = extract_serial_number(f)
-                if d_serial_number[f]:
+            for filename in iterator:
+                d_serial_number[filename] = extract_serial_number(filename)
+                if d_serial_number[filename]:
                     d_output["SerialNumber"].update(d_serial_number)
         else:
             not_success = True
             while not_success:
-                f = next(iterator)
-                d_serial_number[f] = extract_serial_number(f)
-                if d_serial_number[f]:
+                filename = next(iterator)
+                d_serial_number[filename] = extract_serial_number(filename)
+                if d_serial_number[filename]:
                     not_success = False
                     d_output["SerialNumber"].update(d_serial_number)
         if len(d_output["SerialNumber"].keys()) < 1:
