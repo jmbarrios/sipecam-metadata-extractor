@@ -100,17 +100,20 @@ def query_for_copy_files_to_standard_directory(serial_number,
             op.physical_devices(pagination={"limit": 0},
                                 search=dict_for_physical_devices)
 
+    dict_for_device_deployments_filter_1 = {"field"   : "date_deployment",
+                                            "value"   : first_date,
+                                            "valueType": "String",
+                                            "operator": "gte"}
+    dict_for_device_deployments_filter_2 = {"field"   : "date_deployment",
+                                            "value"   : second_date,
+                                            "valueType": "String",
+                                            "operator": "lte"}
+    list_for_device_deployments_filter = [dict_for_device_deployments_filter_1,
+                                          dict_for_device_deployments_filter_2]
+
     op.physical_devices.device_deployments_filter(pagination={"limit": 0},
                                                   search={"operator": "and",
-                                                          "search": [{"field"   : "date_deployment",
-                                                                      "value"   : first_date,
-                                                                      "valueType": "String",
-                                                                      "operator": "gte"},
-                                                                     {"field"   : "date_deployment",
-                                                                      "value"   : second_date,
-                                                                      "valueType": "String",
-                                                                      "operator": "lte"}
-                                                                     ]
+                                                          "search": list_for_device_deployments_filter
                                                           }
                                                   )
     op.physical_devices.device_deployments_filter.node.nomenclatura() #after this line op has type sgqlc selection
