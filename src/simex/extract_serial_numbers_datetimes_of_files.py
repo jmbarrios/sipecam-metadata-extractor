@@ -108,7 +108,7 @@ def main():
                                        d_output,
                                        d_serial_number):
         iterator = multiple_file_types(input_dir,
-                                       *SUFFIXES_TARGET)
+                                       SUFFIXES_TARGET)
         if mixed: #directory with files from several devices.
             for filename in iterator:
                 d_serial_number[filename] = extract_serial_number(filename)
@@ -130,7 +130,7 @@ def main():
                                   d_datetime,
                                   number_of_processes=4):
         iterator = multiple_file_types(input_dir,
-                                       *SUFFIXES_TARGET)
+                                       SUFFIXES_TARGET)
 
         if parallel:
             with Pool(processes=number_of_processes) as pool:
