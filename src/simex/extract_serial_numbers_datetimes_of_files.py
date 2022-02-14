@@ -161,7 +161,7 @@ def main():
         if len(d_output["Datetimes"].keys()) < 1:
             logger.info("there were no dates to extract")
 
-        def order_dict_datetime():
+        def order_dict_datetimes():
             """
             Helper function to order dictionary Datetime using datetimes.
             """
@@ -190,7 +190,7 @@ def main():
                 d_output["DaysBetweenFirstAndLastDatetime"] = diff_datetimes.days
 
         if not mixed: #directory with files from one device.
-            d_output["Datetimes"] = order_dict_datetime()
+            d_output["Datetimes"] = order_dict_datetimes()
             extract_first_last_dates_and_difference()
 
     with open(output_filename, "w") as dst:
