@@ -50,7 +50,8 @@ def get_sgqlc_endpoint_and_operation_for_query():
 
 def query_for_copy_files_to_standard_directory(serial_number,
                                                first_date,
-                                               second_date):
+                                               second_date,
+                                               file_type):
     """
     Execute in GQL of Zendro:
     query {
@@ -83,11 +84,21 @@ def query_for_copy_files_to_standard_directory(serial_number,
           }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
-
-    op.physical_devices(pagination={"limit": 0},
-                        search={"field": "serial_number",
-                                "value": serial_number,
-                                "operator": "like"})
+    
+    dict_for_physical_devices = {"field": "",
+                                 "value": serial_number,
+                                 "operator": "like"}
+    
+    if file_type == "image" or file_type == "video":
+        dict_for_physical_devices["field"] = "serial_number"
+        op.physical_devices(pagination={"limit": 0},
+                            search=dict_for_physical_devices)
+    else:
+        if file_type == "audio":
+            dict_for_physical_devices["field"] = "comments"
+            dict_for_physical_devices["value"] = "ADM" + dict_for_physical_devices["value"]
+            op.physical_devices(pagination={"limit": 0},
+                                search=dict_for_physical_devices)    
 
     op.physical_devices.device_deployments_filter(pagination={"limit": 0},
                                                   search={"operator": "and",
