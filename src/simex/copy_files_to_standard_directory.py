@@ -137,6 +137,7 @@ def main():
             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                   cumulus_name,
                                                   nomenclature_node,
+                                                  serial_number,
                                                   date_of_deployment)
             logger.info("path where files will be copied: %s" % path_with_files_copied)
             os.makedirs(path_with_files_copied, exist_ok=True)
