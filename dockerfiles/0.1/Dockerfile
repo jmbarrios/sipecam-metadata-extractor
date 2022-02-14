@@ -1,3 +1,5 @@
+#Docker image will be built using github actions
+
 #dummy line to trigger build
 FROM ubuntu:20.04
 
@@ -7,7 +9,7 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 ENV DEB_BUILD_DEPS="python3-dev python3-pip python3-setuptools software-properties-common"
-ENV DEB_PACKAGES="sudo nano less git nodejs curl wget htop"
+ENV DEB_PACKAGES="sudo nano less git nodejs curl wget htop exiftool"
 
 RUN apt update && export $DEBIAN_FRONTEND && \
     echo $TIMEZONE > /etc/timezone && apt install -y tzdata
@@ -20,9 +22,13 @@ RUN pip3 install jupyter jupyterlab==$JUPYTERLAB_VERSION --upgrade
 RUN jupyter notebook --generate-config && \
     sed -i "s/# c.NotebookApp.password = .*/c.NotebookApp.password = u'sha1:115e429a919f:21911277af52f3e7a8b59380804140d9ef3e2380'/" ~/.jupyter/jupyter_notebook_config.py
 
-#install simex pkg
+#install smarnach/pyexiftool see: https://github.com/smarnach/pyexiftool
 
-ADD . /root/sipecam-metadata-extractor
+RUN git clone git@github.com:smarnach/pyexiftool.git && cd pyexiftool && python3 setup.py install 
+
+#install simex pkg
+#next line works when building using github actions, assumes sipecam-metadata-extractor repo is cloned
+COPY . /root/sipecam-metadata-extractor
 RUN cd /root/sipecam-metadata-extractor/src && pip3 install .
 
 VOLUME ["/shared_volume"]
