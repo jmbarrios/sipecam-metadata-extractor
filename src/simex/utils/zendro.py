@@ -84,11 +84,11 @@ def query_for_copy_files_to_standard_directory(serial_number,
           }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
-    
+
     dict_for_physical_devices = {"field": "",
                                  "value": serial_number,
                                  "operator": "like"}
-    
+
     if file_type == "image" or file_type == "video":
         dict_for_physical_devices["field"] = "serial_number"
         op.physical_devices(pagination={"limit": 0},
@@ -98,7 +98,7 @@ def query_for_copy_files_to_standard_directory(serial_number,
             dict_for_physical_devices["field"] = "comments"
             dict_for_physical_devices["value"] = "ADM" + dict_for_physical_devices["value"]
             op.physical_devices(pagination={"limit": 0},
-                                search=dict_for_physical_devices)    
+                                search=dict_for_physical_devices)
 
     op.physical_devices.device_deployments_filter(pagination={"limit": 0},
                                                   search={"operator": "and",
