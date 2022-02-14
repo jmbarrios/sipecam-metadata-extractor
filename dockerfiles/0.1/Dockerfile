@@ -24,7 +24,7 @@ RUN jupyter notebook --generate-config && \
 
 #install smarnach/pyexiftool see: https://github.com/smarnach/pyexiftool
 
-RUN git clone git@github.com:smarnach/pyexiftool.git && cd pyexiftool && python3 setup.py install 
+RUN git clone https://github.com/smarnach/pyexiftool.git && cd pyexiftool && python3 setup.py install
 
 #install simex pkg
 #next line works when building using github actions, assumes sipecam-metadata-extractor repo is cloned
