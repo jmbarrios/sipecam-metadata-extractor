@@ -36,7 +36,7 @@ copy_files_to_standard_directory --directory_with_file_of_serial_number_and_date
     parser.add_argument("--path_for_standard_directory",
                         required=True,
                         default=None,
-                        help="Directory that has json file with serial number and dates")    
+                        help="Directory that has json file with serial number and dates")
     args = parser.parse_args()
     return args
 
@@ -60,9 +60,10 @@ def main():
     dict_source_dates = dict_source["Datetimes"]
     diff_dates = dict_source["DaysBetweenFirstAndLastDatetime"]
 
-    filename_source, serial_number = tuple(dict_source_serial_number.items())[0]
+    filename_source_serial_number, serial_number = tuple(dict_source_serial_number.items())[0]
 
-    logger.info("File %s has serial number %s" % (filename_source, serial_number))
+    logger.info("File %s has serial number %s" % (filename_source_serial_number,
+                                                  serial_number))
 
     tup_source_dates = tuple(dict_source_dates.items())
 
@@ -76,14 +77,31 @@ def main():
 
     logger.info("DaysBetweenFirstAndLastDatetime: %s" % diff_dates)
 
-    query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
-                                                                               first_date_str,
-                                                                               second_date_str)
+    filename_source_serial_number_pathlib = pathlib.Path(filename_source_serial_number)
+
+    if filename_source_serial_number_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+        query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+                                                                                   first_date_str,
+                                                                                   second_date_str,
+                                                                                   file_type="audio")
+    else:
+        if filename_source_serial_number_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+            query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+                                                                                       first_date_str,
+                                                                                       second_date_str,
+                                                                                       file_type="image")
+        else:
+            if filename_source_serial_number_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+                                                                                           first_date_str,
+                                                                                           second_date_str,
+                                                                                           file_type="video")
+
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
-    
+
     def copy_files_to_standard_dir(src_dir, dst_dir):
         iterator = multiple_file_types(src_dir,
-                                       *SUFFIXES_TARGET)
+                                       SUFFIXES_TARGET)
         for filename in iterator:
             f_pathlib = pathlib.Path(filename)
             if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
@@ -95,13 +113,13 @@ def main():
                 if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                     standard_dir = os.path.join(dst_dir,
                                                 "images")
-                    logger.info("File %s will be copied to: %s" % (filename, standard_dir))                    
-                    
+                    logger.info("File %s will be copied to: %s" % (filename, standard_dir))
+
                 else:
                     if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                         standard_dir = os.path.join(dst_dir,
                                                     "videos")
-                        logger.info("File %s will be copied to: %s" % (filename, standard_dir))          
+                        logger.info("File %s will be copied to: %s" % (filename, standard_dir))
 
     try:
         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
@@ -124,7 +142,7 @@ def main():
             os.makedirs(path_with_files_copied, exist_ok=True)
             copy_files_to_standard_dir(directory_with_file_of_serial_number_and_dates,
                                        path_with_files_copied)
-            
+
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
                 logger.info("last query wasn't successful")
