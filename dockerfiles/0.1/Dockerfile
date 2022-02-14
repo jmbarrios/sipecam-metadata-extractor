@@ -28,7 +28,7 @@ RUN git clone https://github.com/smarnach/pyexiftool.git && cd pyexiftool && pyt
 
 #install simex pkg
 #next line works when building using github actions, assumes sipecam-metadata-extractor repo is cloned
-COPY . /root/sipecam-metadata-extractor
+ADD . /root/sipecam-metadata-extractor
 RUN cd /root/sipecam-metadata-extractor/src && pip3 install .
 
 VOLUME ["/shared_volume"]
