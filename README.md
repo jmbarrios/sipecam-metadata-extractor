@@ -87,6 +87,8 @@ head -n 72 "$file_for_logs"
 
 # Using slurm (next doc needs to be updated for extract serial numbers, datetimes and copy clis)
 
+Ssh to one node of CONABIO cluster as user `madmex_admin`.
+
 ## Parallel-ssh to rmi and pull docker image for each node at CONABIO
 
 Create
