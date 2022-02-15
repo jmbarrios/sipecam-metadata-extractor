@@ -45,9 +45,9 @@ def main():
     input_file = args.input_file
     node_nomenclature = args.node
     cumulus_name = args.cumulus
-    dir_logs = "logs_simex_extract_metadata_and_ingest"
+    filename_for_logs = "logs_simex_extract_metadata_and_ingest"
     logger = get_logger_for_writing_logs_to_file(input_file,
-                                                 dir_logs)
+                                                 filename_for_logs)
     logger.info("extraction of metadata and ingestion of %s" % input_file)
     wav_extensions = "WAV|wav"
     jpg_extensions = "JPG|jpg"

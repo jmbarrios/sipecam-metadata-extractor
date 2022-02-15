@@ -47,7 +47,7 @@ def main():
 
     with open(sipecam_files_to_extract_metadata, "w+") as file:
         with open(sipecam_subdirectories, "w+") as subdirectory:
-            for f in multiple_file_types(input_directory, *SUFFIXES_SIPECAM,
+            for f in multiple_file_types(input_directory, SUFFIXES_SIPECAM,
                                          recursive=True):
                 file.write(f + "\n")
                 dirname_f = os.path.dirname(f)
