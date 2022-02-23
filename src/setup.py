@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 cli_list = "list_of_files_and_subdirectories_to_extract_metadata = simex.list_of_files_and_subdirectories_to_extract_metadata:main"
-cli_extract_sn_dt = "extract_serial_numbers_datetimes_of_files = simex.extract_serial_numbers_datetimes_of_files:main"
+cli_extract_sn_dt = "extract_serial_numbers_and_dates_of_files = simex.extract_serial_numbers_and_dates_of_files:main"
 cli_extract_met_and_ing = "extract_metadata_and_ingest_it = simex.extract_metadata_and_ingest_it:main"
 cli_generate_sipecam_zendro_schema = "generate_sipecam_zendro_schema = simex.generate_sipecam_zendro_schema:main"
 cli_copy_files_to_standard_directory = "copy_files_to_standard_directory = simex.copy_files_to_standard_directory:main"

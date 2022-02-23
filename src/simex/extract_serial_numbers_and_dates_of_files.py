@@ -15,30 +15,30 @@ from simex import read_metadata_image, read_metadata_audio
 
 SUFFIXES_TARGET = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES
 
-def extract_datetime(filename):
+def extract_date(filename):
     """
-    Helper function to extract datetime of file.
-    It's outside main to execute it in parallel.
+    Helper function to extract date of file.
+    Is outside main to execute it in parallel.
     """
     f_pathlib = pathlib.Path(filename)
     datetime_of_file = ""
     if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-        datetime_of_file = read_metadata_audio.extract_datetime_original(filename)
+        datetime_of_file = read_metadata_audio.extract_date(filename)
     else:
         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-            datetime_of_file = read_metadata_image.extract_datetime_original(filename)
+            datetime_of_file = read_metadata_image.extract_date(filename)
     return {filename: datetime_of_file}
 
 
 def arguments_parse():
     help = """
-Traverse files in a directory to extract serial number and datetimes of them.
+Traverse files in a directory to extract their serial number and dates.
 
 --------------
 Example usage:
 --------------
 
-extract_serial_numbers_datetimes_of_files --input_dir /dir/
+extract_serial_numbers_and_dates_of_files --input_dir /dir/
 
 """
 
@@ -69,15 +69,15 @@ def main():
     mixed = args.mixed
     parallel = args.parallel
     number_of_processes = args.number_of_processes
-    filename_for_logs = "logs_simex_extract_serial_numbers_datetimes"
+    filename_for_logs = "logs_simex_extract_serial_numbers_dates"
     logger = get_logger_for_writing_logs_to_file(input_directory,
                                                  filename_for_logs)
     input_directory_purepath = pathlib.PurePath(input_directory).name
     output_filename = os.path.join(input_directory,
                                    input_directory_purepath) + \
-                                   "_simex_extract_serial_numbers_datetimes.json"
-    logger.info("extraction of serial numbers and datetimes")
-    logger.info("logs for extraction of serial numbers and datetimes in %s" % output_filename)
+                                   "_simex_extract_serial_numbers_dates.json"
+    logger.info("extraction of serial numbers and dates")
+    logger.info("logs for extraction of serial numbers and dates in %s" % output_filename)
 
     dict_output = {}
 
@@ -125,7 +125,7 @@ def main():
         if len(d_output["SerialNumber"].keys()) < 1:
             logger.info("there were no serial numbers to extract")
 
-    def extract_datetime_of_files(input_dir,
+    def extract_dates_of_files(input_dir,
                                   d_output,
                                   d_datetime,
                                   number_of_processes=4):
@@ -134,77 +134,79 @@ def main():
 
         if parallel:
             with Pool(processes=number_of_processes) as pool:
-                res_map = pool.map(extract_datetime,
+                res_map = pool.map(extract_date,
                                    iterator) #returns list of dictionaries
                 for dictionary in res_map:
-                    filename, datetime_file = tuple(dictionary.items())[0]
-                    logger.info("extraction of datetime of %s" % filename)
-                    if not datetime_file:
-                        logger.info("FAILED extraction of datetime of file %s" % filename)
-                        logger.info("returning empty datetime")
+                    filename, date_file = tuple(dictionary.items())[0]
+                    logger.info("extraction of date of %s" % filename)
+                    if not date_file:
+                        logger.info("FAILED extraction of date of file %s" % filename)
+                        logger.info("returning empty date")
                     else:
-                        logger.info("SUCCESSFUL extraction of datetime of %s" % filename)
+                        logger.info("SUCCESSFUL extraction of date of %s" % filename)
                 #see: https://stackoverflow.com/questions/3494906/how-do-i-merge-a-list-of-dicts-into-a-single-dict
-                d_output["Datetimes"] = reduce(lambda a, b: {**a, **b}, res_map)
+                d_output["Dates"] = reduce(lambda a, b: {**a, **b}, res_map)
         else:
             for filename in iterator:
-                logger.info("extraction of datetime of %s" % filename)
-                res_extract_datetime = extract_datetime(filename)
-                datetime_file = res_extract_datetime[filename]
-                if not datetime_file:
-                    logger.info("FAILED extraction of datetime of file %s" % filename)
-                    logger.info("returning empty datetime")
+                logger.info("extraction of date of %s" % filename)
+                res_extract_date = extract_date(filename)
+                date_file = res_extract_date[filename]
+                if not date_file:
+                    logger.info("FAILED extraction of date of file %s" % filename)
+                    logger.info("returning empty date")
                 else:
-                    logger.info("SUCCESSFUL extraction of datetime of %s" % filename)
-                    d_output["Datetimes"].update(res_extract_datetime)
+                    logger.info("SUCCESSFUL extraction of date of %s" % filename)
+                    d_output["Dates"].update(res_extract_date)
 
-        if len(d_output["Datetimes"].keys()) < 1:
+        if len(d_output["Dates"].keys()) < 1:
             logger.info("there were no dates to extract")
 
-        def order_dict_datetimes():
+        def order_dict_dates():
             """
-            Helper function to order dictionary Datetime using datetimes.
+            Helper function to order dictionary Dates using dates.
             """
-            return {k: v for k, v in sorted(d_output["Datetimes"].items(),
+            return {k: v for k, v in sorted(d_output["Dates"].items(),
                                             key=itemgetter(1))}
 
         def extract_first_last_dates_and_difference():
             """
-            Helper function to simplify dictionary Datetime with
-            only first, last and if there are more than two datetimes then
-            computes difference between first and last datetimes in days.
+            Helper function to simplify dictionary Dates with
+            only first, last and if there are more than two dates then
+            computes difference between first and last dates in days.
             """
-            if len(d_output["Datetimes"].keys()) >= 2:
-                first_key, *_, last_key = d_output["Datetimes"].keys()
-                d1_str = d_output["Datetimes"][first_key]
-                d2_str = d_output["Datetimes"][last_key]
-                d_output["Datetimes"] = {first_key: d1_str,
-                                        last_key : d2_str
-                                       }
-                format_string_data = "%Y-%m-%d"
-                d1_datetime = datetime.datetime.strptime(d1_str,
-                                                         format_string_data)
-                d2_datetime = datetime.datetime.strptime(d2_str,
-                                                         format_string_data)
-                diff_datetimes = d2_datetime - d1_datetime
-                d_output["DaysBetweenFirstAndLastDatetime"] = diff_datetimes.days
+            first_key, *_, last_key = d_output_dates_keys
+            d1_str = d_output["Dates"][first_key]
+            d2_str = d_output["Dates"][last_key]
+            d_output["FirstAndLastDate"] = {first_key: d1_str,
+                                            last_key : d2_str
+                                            }
+            format_string_data = "%Y-%m-%d"
+            d1_datetime = datetime.datetime.strptime(d1_str,
+                                                     format_string_data)
+            d2_datetime = datetime.datetime.strptime(d2_str,
+                                                     format_string_data)
+            diff_datetimes = d2_datetime - d1_datetime
+            d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes.days
+            del d_output["Dates"]
 
         if not mixed: #directory with files from one device.
-            d_output["Datetimes"] = order_dict_datetimes()
-            extract_first_last_dates_and_difference()
+            d_output["Dates"] = order_dict_dates()
+            d_output_dates_keys = d_output["Dates"].keys()
+            if len(d_output_dates_keys) >= 2:
+                extract_first_last_dates_and_difference()
 
     with open(output_filename, "w") as dst:
         dict_output["SerialNumber"] = {}
-        dict_output["Datetimes"] = {}
+        dict_output["Dates"] = {}
         dict_serial_number = {}
         dict_datetime = {}
         extract_serial_number_of_files(input_directory,
                                        mixed,
                                        dict_output,
                                        dict_serial_number)
-        extract_datetime_of_files(input_directory,
-                                  dict_output,
-                                  dict_datetime)
+        extract_dates_of_files(input_directory,
+                               dict_output,
+                               dict_datetime)
 
         json.dump(dict_output, dst)
 

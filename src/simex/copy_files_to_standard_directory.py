@@ -51,14 +51,14 @@ def main():
     input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_dates).name
     file_with_serial_number_and_dates = os.path.join(directory_with_file_of_serial_number_and_dates,
                                                          input_directory_purepath) + \
-                                                         "_simex_extract_serial_numbers_datetimes.json"
+                                                         "_simex_extract_serial_numbers_dates.json"
 
     with open(file_with_serial_number_and_dates, 'r') as f:
         dict_source = json.load(f)
 
     dict_source_serial_number = dict_source["SerialNumber"]
-    dict_source_dates = dict_source["Datetimes"]
-    diff_dates = dict_source["DaysBetweenFirstAndLastDatetime"]
+    dict_source_dates = dict_source["FirstAndLastDate"]
+    diff_dates = dict_source["DaysBetweenFirstAndLastDate"]
 
     filename_source_serial_number, serial_number = tuple(dict_source_serial_number.items())[0]
 
@@ -70,12 +70,12 @@ def main():
     filename_source_first_date,  first_date_str  = tup_source_dates[0]
     filename_source_second_date, second_date_str = tup_source_dates[1]
 
-    logger.info("File %s has datetime %s" % (filename_source_first_date,
+    logger.info("File %s has date %s" % (filename_source_first_date,
                                              first_date_str))
-    logger.info("File %s has datetime %s" % (filename_source_second_date,
+    logger.info("File %s has date %s" % (filename_source_second_date,
                                              second_date_str))
 
-    logger.info("DaysBetweenFirstAndLastDatetime: %s" % diff_dates)
+    logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
     filename_source_serial_number_pathlib = pathlib.Path(filename_source_serial_number)
 
