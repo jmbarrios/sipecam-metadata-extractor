@@ -23,66 +23,82 @@ def get_am_gain(comment):
         match = GAIN_REGEX_ALT.search(comment)
     return match.group(1)
 
-def get_am_datetime(comment):
+def transform_time_zone(tz,
+                        offset_direction_with_offset,
+                        offset_direction,
+                        offset):
+    if len(offset) != 4:
+        offset = '{:02d}00'.format(int(offset))
+    return tz.replace(offset_direction_with_offset, 
+                      offset_direction + offset) #returns UTC<offset direction><2digits including offset>00: example: UTC-0600
+
+def get_date_with_timezone(comment):
     match = DATE_REGEX.search(comment)
     timezone = match.group
 
     raw = match.group(1)
     time = match.group(2)
     date = match.group(3)
-
     tz = match.group(4)
-
+    offset_direction_with_offset = match.group(5)
+    offset_direction = match.group(6)
+    offset = match.group(7)    
+    
     try:
-        offset_direction = match.group(6)
-        offset = match.group(7)
-
-        if len(offset) != 4:
-            offset = '{:02d}00'.format(int(offset))
-
-        new_tz = tz.replace(match.group(5), offset_direction + offset)
-        raw = raw.replace(tz, new_tz)
-        tz = new_tz
+        new_tz = transform_time_zone(tz,
+                                     offset_direction_with_offset,
+                                     offset_direction,
+                                     offset)
+        date_with_timezone = raw.replace(tz, new_tz)
     except Exception:
         pass
-
-    if "(UTC)" in raw:
-        datetime_format = '%H:%M:%S %d/%m/%Y (%Z)'
-    else:
-        datetime_format = '%H:%M:%S %d/%m/%Y (%Z%z)'
-
-    return {
-        'raw': raw,
-        'time': time,
-        'date': date,
-        'tz': tz,
-        'datetime': datetime.strptime(raw, datetime_format),
-        'format': datetime_format
-    }
+    return date_with_timezone #example: 21:20:00 28/07/2021 (UTC-0600)
 
 def get_am_id(comment):
     match = ID_REGEX.search(comment)
     return match.group(1)
 
-def get_comment(filename):
-    with exiftool.ExifTool() as et:
-        return et.get_tag("Comment", filename)
+def get_timezone_name(date_with_timezone):
+    if "(UTC)" in date_with_timezone:
+        datetime_format = '%H:%M:%S %d/%m/%Y (%Z)'
+        timezone_name = "UTC"
+    else:
+        datetime_format = '%H:%M:%S %d/%m/%Y (%Z%z)'
+        datetime_file = datetime.strptime(date_with_timezone, 
+                                          datetime_format)
+        timezone_name = datetime_file.tzinfo.tzname(datetime_file)
+    return timezone_name
 
-def extract_serial_number(filename):
-    comment_metadata = get_comment(filename)
-    return get_am_id(comment_metadata)
-
-def get_datetime(comment):
+def get_date(comment):
     match_date = ONLY_DATE_REGEX.search(comment)
     date_of_file = match_date.group(1)
     format_string_data = "%d/%m/%Y"
     return date.isoformat(datetime.strptime(date_of_file, 
                                             format_string_data)) #convert to Y-m-d format
 
-def extract_datetime_original(filename):
-    comment_metadata = get_comment(filename)
-    return get_datetime(comment_metadata)    
+def get_comment(filename):
+    with exiftool.ExifTool() as et:
+        return et.get_tag("Comment", filename)
 
-def get_metadata(filename):
-    dict_metadata = {}
-    return dict_metadata
+def get_metadata_of_device(filename):
+    comment_metadata = get_comment(filename)
+    battery = get_am_battery_state(comment_metadata)
+    gain = get_am_gain(comment_metadata)
+    return {"battery" : battery,
+            "gain"    : gain
+            }
+def get_metadata_of_file(filename):
+    comment_metadata = get_comment(filename)
+    date_with_timezone = get_date_with_timezone(comment_metadata)
+    timezone = get_timezone_name(date_with_timezone)
+    return {"datetime" : date_with_timezone,
+            "timezone" : timezone
+           }
+
+def extract_serial_number(filename):
+    comment_metadata = get_comment(filename)
+    return get_am_id(comment_metadata)
+
+def extract_date(filename):
+    comment_metadata = get_comment(filename)
+    return get_date(comment_metadata)#example: 2021-07-28
