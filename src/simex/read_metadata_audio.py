@@ -29,7 +29,7 @@ def transform_time_zone(tz,
                         offset):
     if len(offset) != 4:
         offset = '{:02d}00'.format(int(offset))
-    return tz.replace(offset_direction_with_offset, 
+    return tz.replace(offset_direction_with_offset,
                       offset_direction + offset) #returns UTC<offset direction><2digits including offset>00: example: UTC-0600
 
 def get_date_with_timezone(comment):
@@ -42,8 +42,8 @@ def get_date_with_timezone(comment):
     tz = match.group(4)
     offset_direction_with_offset = match.group(5)
     offset_direction = match.group(6)
-    offset = match.group(7)    
-    
+    offset = match.group(7)
+
     try:
         new_tz = transform_time_zone(tz,
                                      offset_direction_with_offset,
@@ -64,7 +64,7 @@ def get_timezone_name(date_with_timezone):
         timezone_name = "UTC"
     else:
         datetime_format = '%H:%M:%S %d/%m/%Y (%Z%z)'
-        datetime_file = datetime.strptime(date_with_timezone, 
+        datetime_file = datetime.strptime(date_with_timezone,
                                           datetime_format)
         timezone_name = datetime_file.tzinfo.tzname(datetime_file)
     return timezone_name
@@ -73,7 +73,7 @@ def get_date(comment):
     match_date = ONLY_DATE_REGEX.search(comment)
     date_of_file = match_date.group(1)
     format_string_data = "%d/%m/%Y"
-    return date.isoformat(datetime.strptime(date_of_file, 
+    return date.isoformat(datetime.strptime(date_of_file,
                                             format_string_data)) #convert to Y-m-d format
 
 def get_comment(filename):
@@ -82,18 +82,21 @@ def get_comment(filename):
 
 def get_metadata_of_device(filename):
     comment_metadata = get_comment(filename)
-    battery = get_am_battery_state(comment_metadata)
     gain = get_am_gain(comment_metadata)
-    return {"battery" : battery,
-            "gain"    : gain
+    date_with_timezone = get_date_with_timezone(comment_metadata)
+    timezone = get_timezone_name(date_with_timezone)
+    serial_number = get_am_id(comment_metadata)
+    return {"Gain"    : gain,
+            "Timezone": timezone,
+            "SerialNumber": serial_number
             }
 def get_metadata_of_file(filename):
     comment_metadata = get_comment(filename)
+    battery = get_am_battery_state(comment_metadata)
     date_with_timezone = get_date_with_timezone(comment_metadata)
-    timezone = get_timezone_name(date_with_timezone)
-    return {"datetime" : date_with_timezone,
-            "timezone" : timezone
-           }
+    return {"Battery"  : battery,
+            "Datetime" : date_with_timezone
+            }
 
 def extract_serial_number(filename):
     comment_metadata = get_comment(filename)
