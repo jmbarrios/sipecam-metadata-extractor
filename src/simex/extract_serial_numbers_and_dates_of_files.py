@@ -9,25 +9,34 @@ from multiprocessing import Pool
 from functools import reduce
 
 from simex import get_logger_for_writing_logs_to_file
-from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES
+from simex import SUFFIXES_SIPECAM, SUFFIXES_SIPECAM_AUDIO, \
+SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO
 from simex.utils.directories_and_files import multiple_file_types
 from simex import read_metadata_image, read_metadata_audio
 
-SUFFIXES_TARGET = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES
+SUFFIXES_AUDIO_IMAGES = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES
 
-def extract_date(filename):
+def extract_metadata(filename):
     """
-    Helper function to extract date of file.
+    Helper function to extract date and metadata of file.
     Is outside main to execute it in parallel.
     """
     f_pathlib = pathlib.Path(filename)
-    datetime_of_file = ""
+    date_of_file = ""
     if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-        datetime_of_file = read_metadata_audio.extract_date(filename)
+        date_of_file = read_metadata_audio.extract_date(filename)
+        tuple_metadata_of_file = (filename,read_metadata_audio.get_metadata_of_file(filename))
     else:
         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-            datetime_of_file = read_metadata_image.extract_date(filename)
-    return {filename: datetime_of_file}
+            date_of_file = read_metadata_image.extract_date(filename)
+            tuple_metadata_of_file = (filename,read_metadata_image.extract_date(filename)) #call get_metadata_of_file for imgs
+        else:
+            if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                date_of_file = read_metadata_image.extract_date(filename) #call extract_date for videos
+                tuple_metadata_of_file = (filename,read_metadata_image.extract_date(filename)) #call get_metadata_of_file for videos
+    tuple_date = (filename, date_of_file)
+
+    return (tuple_date, tuple_metadata_of_file)
 
 
 def arguments_parse():
@@ -49,9 +58,6 @@ extract_serial_numbers_and_dates_of_files --input_dir /dir/
                         required=True,
                         default=None,
                         help="Directory with WAV, JPG and AVI files")
-    parser.add_argument('--mixed',
-                        action='store_true',
-                        help='Directory contains mixture of files taken by different devices?')
     parser.add_argument('--parallel',
                     action='store_true',
                     help='Execution in parallel?')
@@ -66,7 +72,6 @@ extract_serial_numbers_and_dates_of_files --input_dir /dir/
 def main():
     args = arguments_parse()
     input_directory = args.input_directory
-    mixed = args.mixed
     parallel = args.parallel
     number_of_processes = args.number_of_processes
     filename_for_logs = "logs_simex_extract_serial_numbers_dates"
@@ -84,79 +89,72 @@ def main():
     if number_of_processes and not parallel:
         parallel = True
 
-    def extract_serial_number(filename):
+    def extract_metadata_of_device(filename):
         """
         Helper function to extract serial number of file.
         """
         f_pathlib = pathlib.Path(filename)
-        logger.info("extraction of serial number of %s" % filename)
-        serial_number = ""
         if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-            serial_number = read_metadata_audio.extract_serial_number(filename)
+            dict_metadata_of_device = read_metadata_audio.get_metadata_of_device(filename)
         else:
             if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                 serial_number = read_metadata_image.extract_serial_number(filename)
-        if not serial_number:
-            logger.info("FAILED extraction of serial number of file")
-            logger.info("returning empty serial number")
-        else:
-            logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
-        return serial_number
+                dict_metadata_of_device = {"SerialNumber": serial_number}
+        return dict_metadata_of_device
 
-    def extract_serial_number_of_files(input_dir,
-                                       mixed,
-                                       d_output,
-                                       d_serial_number):
+    def extract_metadata_of_device_from_files(input_dir,
+                                              d_output):
         iterator = multiple_file_types(input_dir,
-                                       SUFFIXES_TARGET)
-        if mixed: #directory with files from several devices.
-            for filename in iterator:
-                d_serial_number[filename] = extract_serial_number(filename)
-                if d_serial_number[filename]:
-                    d_output["SerialNumber"].update(d_serial_number)
-        else:
-            not_success = True
-            while not_success:
-                filename = next(iterator)
-                d_serial_number[filename] = extract_serial_number(filename)
-                if d_serial_number[filename]:
-                    not_success = False
-                    d_output["SerialNumber"].update(d_serial_number)
-        if len(d_output["SerialNumber"].keys()) < 1:
-            logger.info("there were no serial numbers to extract")
+                                       SUFFIXES_AUDIO_IMAGES)
+        not_success = True
+        while not_success:
+            filename = next(iterator)
+            logger.info("extraction of metadata of device from %s" % filename)
+            res_extract_metadata_of_device = extract_metadata_of_device(filename)
+            serial_number_file = res_extract_metadata_of_device["SerialNumber"]
+            if serial_number_file:
+                logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
+                not_success = False
+                d_output["MetadataDevice"] = res_extract_metadata_of_device
+        if len(d_output["MetadataDevice"].keys()) < 1:
+            logger.info("FAILED extraction of serial number of files in dir %s" % input_dir)
 
-    def extract_dates_of_files(input_dir,
+    def extract_metadata_of_files(input_dir,
                                   d_output,
-                                  d_datetime,
                                   number_of_processes=4):
         iterator = multiple_file_types(input_dir,
-                                       SUFFIXES_TARGET)
+                                       SUFFIXES_SIPECAM)
+        d_output["Dates"] = {}
+        d_output["MetadataFiles"] = {}
 
         if parallel:
             with Pool(processes=number_of_processes) as pool:
-                res_map = pool.map(extract_date,
-                                   iterator) #returns list of dictionaries
-                for dictionary in res_map:
-                    filename, date_file = tuple(dictionary.items())[0]
+                res_map = pool.map(extract_metadata,
+                                   iterator) #returns list of tuples. Each element of tuple is another tuple
+                for t in res_map:
+                    filename, date_file = t[0] #t[0] tuple with filename and date as 1st, 2nd elements resp
                     logger.info("extraction of date of %s" % filename)
                     if not date_file:
                         logger.info("FAILED extraction of date of file %s" % filename)
                         logger.info("returning empty date")
                     else:
                         logger.info("SUCCESSFUL extraction of date of %s" % filename)
-                #see: https://stackoverflow.com/questions/3494906/how-do-i-merge-a-list-of-dicts-into-a-single-dict
-                d_output["Dates"] = reduce(lambda a, b: {**a, **b}, res_map)
+                        d_output["Dates"][filename] = date_file
+                        filename, metadata_file = t[1] #t[1] tuple with filename and metadata as 1st, 2nd elements resp
+                        d_output["MetadataFiles"][filename] = metadata_file
         else:
             for filename in iterator:
                 logger.info("extraction of date of %s" % filename)
-                res_extract_date = extract_date(filename)
-                date_file = res_extract_date[filename]
+                tuple_date, tuple_metadata_of_file = extract_metadata(filename)
+                date_file = tuple_date[1] #tuple with filename and date as 1st, 2nd elements resp
                 if not date_file:
                     logger.info("FAILED extraction of date of file %s" % filename)
                     logger.info("returning empty date")
                 else:
                     logger.info("SUCCESSFUL extraction of date of %s" % filename)
-                    d_output["Dates"].update(res_extract_date)
+                    d_output["Dates"][filename] = date_file
+                    metadata_file = tuple_metadata_of_file[1] #tuple with filename and metadata as 1st, 2nd elements resp
+                    d_output["MetadataFiles"][filename] = metadata_file
 
         if len(d_output["Dates"].keys()) < 1:
             logger.info("there were no dates to extract")
@@ -189,24 +187,17 @@ def main():
             d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes.days
             del d_output["Dates"]
 
-        if not mixed: #directory with files from one device.
-            d_output["Dates"] = order_dict_dates()
-            d_output_dates_keys = d_output["Dates"].keys()
-            if len(d_output_dates_keys) >= 2:
-                extract_first_last_dates_and_difference()
+        d_output["Dates"] = order_dict_dates()
+        d_output_dates_keys = d_output["Dates"].keys()
+        if len(d_output_dates_keys) >= 2:
+            extract_first_last_dates_and_difference()
 
     with open(output_filename, "w") as dst:
-        dict_output["SerialNumber"] = {}
-        dict_output["Dates"] = {}
-        dict_serial_number = {}
-        dict_datetime = {}
-        extract_serial_number_of_files(input_directory,
-                                       mixed,
-                                       dict_output,
-                                       dict_serial_number)
-        extract_dates_of_files(input_directory,
-                               dict_output,
-                               dict_datetime)
+        dict_output = {}
+        extract_metadata_of_device_from_files(input_directory,
+                                              dict_output)
+        extract_metadata_of_files(input_directory,
+                                  dict_output)
 
         json.dump(dict_output, dst)
 
