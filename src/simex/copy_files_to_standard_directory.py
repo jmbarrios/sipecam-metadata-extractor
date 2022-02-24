@@ -10,9 +10,8 @@ from simex.utils.zendro import query_for_copy_files_to_standard_directory, \
 query_alternative_auxiliar_for_copy_files_to_standard_directory, \
 query_alternative_for_copy_files_to_standard_directory
 from simex.utils.directories_and_files import multiple_file_types
-from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO
-
-SUFFIXES_TARGET = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES + SUFFIXES_SIPECAM_VIDEO
+from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO, \
+SUFFIXES_SIPECAM
 
 def arguments_parse():
     help = """
@@ -56,14 +55,12 @@ def main():
     with open(file_with_serial_number_and_dates, 'r') as f:
         dict_source = json.load(f)
 
-    dict_source_serial_number = dict_source["SerialNumber"]
+    serial_number = dict_source["MetadataDevice"]["SerialNumber"]
     dict_source_dates = dict_source["FirstAndLastDate"]
     diff_dates = dict_source["DaysBetweenFirstAndLastDate"]
 
-    filename_source_serial_number, serial_number = tuple(dict_source_serial_number.items())[0]
-
-    logger.info("File %s has serial number %s" % (filename_source_serial_number,
-                                                  serial_number))
+    logger.info("Dir %s has serial number %s" % (directory_with_file_of_serial_number_and_dates,
+                                                 serial_number))
 
     tup_source_dates = tuple(dict_source_dates.items())
 
@@ -77,21 +74,21 @@ def main():
 
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
-    filename_source_serial_number_pathlib = pathlib.Path(filename_source_serial_number)
+    filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
 
-    if filename_source_serial_number_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+    if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
         query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                    first_date_str,
                                                                                    second_date_str,
                                                                                    file_type="audio")
     else:
-        if filename_source_serial_number_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
             query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                        first_date_str,
                                                                                        second_date_str,
                                                                                        file_type="image")
         else:
-            if filename_source_serial_number_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                 query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                            first_date_str,
                                                                                            second_date_str,
@@ -101,7 +98,7 @@ def main():
 
     def copy_files_to_standard_dir(src_dir, dst_dir):
         iterator = multiple_file_types(src_dir,
-                                       SUFFIXES_TARGET)
+                                       SUFFIXES_SIPECAM)
         for filename in iterator:
             f_pathlib = pathlib.Path(filename)
             if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
