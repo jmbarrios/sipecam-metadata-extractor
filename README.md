@@ -49,12 +49,12 @@ head -n 10 /root/sipecam-metadata-extractor/src/simex/sipecam_zendro_schema.py
 
 ```
 
-# extract_serial_numbers_and_dates_of_files
+# extract_serial_numbers_dates_and_metadata_of_files_and_device
 
 ```
 dir_to_be_processed="/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/Playon 1338/Camaras/1338_1/100RECNX/"
 #default for parallel execution are 4 processes
-docker run --rm -v /LUSTRE:/LUSTRE $REPO_URL:$SIMEX_VERSION extract_serial_numbers_and_dates_of_files --input_dir "$dir_to_be_processed" --parallel
+docker run --rm -v /LUSTRE:/LUSTRE $REPO_URL:$SIMEX_VERSION extract_serial_numbers_dates_and_metadata_of_files_and_device --input_dir "$dir_to_be_processed" --parallel
 ```
 
 ## check

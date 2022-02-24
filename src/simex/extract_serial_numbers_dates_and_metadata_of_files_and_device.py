@@ -47,7 +47,7 @@ Traverse files in a directory to extract their serial number and dates.
 Example usage:
 --------------
 
-extract_serial_numbers_and_dates_of_files --input_dir /dir/
+extract_serial_numbers_dates_and_metadata_of_files_and_device --input_dir /dir/
 
 """
 
@@ -74,15 +74,15 @@ def main():
     input_directory = args.input_directory
     parallel = args.parallel
     number_of_processes = args.number_of_processes
-    filename_for_logs = "logs_simex_extract_serial_numbers_dates"
+    filename_for_logs = "logs_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device"
     logger = get_logger_for_writing_logs_to_file(input_directory,
                                                  filename_for_logs)
     input_directory_purepath = pathlib.PurePath(input_directory).name
     output_filename = os.path.join(input_directory,
                                    input_directory_purepath) + \
-                                   "_simex_extract_serial_numbers_dates.json"
-    logger.info("extraction of serial numbers and dates")
-    logger.info("logs for extraction of serial numbers and dates in %s" % output_filename)
+                                   "_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.json"
+    logger.info("extraction of serial_numbers_dates_and_metadata_of_files_and_device")
+    logger.info("logs for extraction of serial_numbers_dates_and_metadata_of_files_and_device in %s" % output_filename)
 
     dict_output = {}
 
