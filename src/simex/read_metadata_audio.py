@@ -13,6 +13,15 @@ BATTERY_REGEX  = re.compile(r'battery state was (\d.\dV)')
 ONLY_DATE_REGEX = re.compile(r'(\d{2}\/\d{2}\/\d{4})')
 ONLY_TIME_REGEX = re.compile(r'(\d{2}:\d{2}:\d{2})')
 
+TAGS = ["File:FileSize",
+        "RIFF:Encoding",
+        "RIFF:NumChannels",
+        "RIFF:SampleRate",
+        "RIFF:AvgBytesPerSec",
+        "RIFF:BitsPerSample",
+        "RIFF:Comment",
+        "Composite:Duration"]  
+
 def get_am_battery_state(comment):
     match = BATTERY_REGEX.search(comment)
     return match.group(1)
@@ -94,9 +103,14 @@ def get_metadata_of_file(filename):
     comment_metadata = get_comment(filename)
     battery = get_am_battery_state(comment_metadata)
     date_with_timezone = get_date_with_timezone(comment_metadata)
-    return {"Battery"  : battery,
-            "Datetime" : date_with_timezone
-            }
+    with exiftool.ExifTool(common_args=["-G"]) as et:
+        exiftool_metadata = et.get_tags(TAGS, filename)
+    dict_metadata_of_file = {"Battery"  : battery,
+                             "Datetime" : date_with_timezone
+                             }
+    for t in TAGS:
+        dict_metadata_of_file[t] = exiftool_metadata[t]
+    return dict_metadata_of_file
 
 def extract_serial_number(filename):
     comment_metadata = get_comment(filename)
