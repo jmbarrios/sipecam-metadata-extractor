@@ -61,7 +61,7 @@ docker run --rm -v /LUSTRE:/LUSTRE $REPO_URL:$SIMEX_VERSION extract_serial_numbe
 
 ```
 dir_to_be_processed="/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/Playon 1338/Camaras/1338_1/100RECNX/"
-file_for_logs=$(find "$dir_to_be_processed" -name "logs_simex_extract_serial_numbers_dates.logs")
+file_for_logs=$(find "$dir_to_be_processed" -name "logs_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.logs")
 head -n 15 "$file_for_logs"
 
 file_json=$(find "$dir_to_be_processed" -name "*.json")
