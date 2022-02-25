@@ -103,6 +103,7 @@ def get_metadata_of_file(filename):
     comment_metadata = get_comment(filename)
     battery = get_am_battery_state(comment_metadata)
     date_with_timezone = get_date_with_timezone(comment_metadata)
+    #see: https://github.com/sylikc/pyexiftool/issues/21
     with exiftool.ExifTool(common_args=["-G"]) as et:
         exiftool_metadata = et.get_tags(TAGS, filename)
     dict_metadata_of_file = {"Battery"  : battery,
