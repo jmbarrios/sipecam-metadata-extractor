@@ -29,7 +29,7 @@ def extract_metadata(filename):
     else:
         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
             date_of_file = read_metadata_image.extract_date(filename)
-            tuple_metadata_of_file = (filename,read_metadata_image.extract_date(filename)) #call get_metadata_of_file for imgs
+            tuple_metadata_of_file = (filename,read_metadata_image.get_metadata_of_file(filename))
         else:
             if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                 date_of_file = read_metadata_image.extract_date(filename) #call extract_date for videos
@@ -98,8 +98,7 @@ def main():
             dict_metadata_of_device = read_metadata_audio.get_metadata_of_device(filename)
         else:
             if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-                serial_number = read_metadata_image.extract_serial_number(filename)
-                dict_metadata_of_device = {"SerialNumber": serial_number}
+                dict_metadata_of_device = read_metadata_image.get_metadata_of_device(filename)
         return dict_metadata_of_device
 
     def extract_metadata_of_device_from_files(input_dir,
