@@ -13,14 +13,17 @@ BATTERY_REGEX  = re.compile(r'battery state was (\d.\dV)')
 ONLY_DATE_REGEX = re.compile(r'(\d{2}\/\d{2}\/\d{4})')
 ONLY_TIME_REGEX = re.compile(r'(\d{2}:\d{2}:\d{2})')
 
-TAGS = ["File:FileSize",
-        "RIFF:Encoding",
-        "RIFF:NumChannels",
-        "RIFF:SampleRate",
-        "RIFF:AvgBytesPerSec",
-        "RIFF:BitsPerSample",
-        "RIFF:Comment",
-        "Composite:Duration"]
+TAGS_FOR_FILE = ["File:FileSize",
+                 "RIFF:Encoding",
+                 "RIFF:NumChannels",
+                 "RIFF:SampleRate",
+                 "RIFF:AvgBytesPerSec",
+                 "RIFF:BitsPerSample",
+                 "RIFF:Comment",
+                 "Composite:Duration"
+                ]
+
+TAGS_FOR_DEVICE = ["RIFF:Artist"]
 
 def get_am_battery_state(comment):
     match = BATTERY_REGEX.search(comment)
@@ -92,8 +95,14 @@ def get_comment(filename):
 def get_metadata_of_device(filename):
     comment_metadata = get_comment(filename)
     serial_number = get_am_id(comment_metadata)
-    return {"SerialNumber": serial_number
-            }
+    with exiftool.ExifTool() as et:
+        exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE, filename)
+    dict_metadata_of_file = {}
+    for t in TAGS_FOR_DEVICE:
+        dict_metadata_of_file[t] = exiftool_metadata[t]
+    dict_metadata_of_file["SerialNumber"] = serial_number
+    return dict_metadata_of_file
+
 def get_metadata_of_file(filename):
     comment_metadata = get_comment(filename)
     battery = get_am_battery_state(comment_metadata)
@@ -102,13 +111,13 @@ def get_metadata_of_file(filename):
     timezone = get_timezone_name(date_with_timezone)
     #see: https://github.com/sylikc/pyexiftool/issues/21 for common_args=["-G"]
     with exiftool.ExifTool(common_args=["-G"]) as et:
-        exiftool_metadata = et.get_tags(TAGS, filename)
+        exiftool_metadata = et.get_tags(TAGS_FOR_FILE, filename)
     dict_metadata_of_file = {"Battery"  : battery,
                              "Datetime" : date_with_timezone,
                              "Gain"     : gain,
                              "Timezone" : timezone
                              }
-    for t in TAGS:
+    for t in TAGS_FOR_FILE:
         dict_metadata_of_file[t] = exiftool_metadata[t]
     return dict_metadata_of_file
 
