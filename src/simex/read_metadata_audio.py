@@ -20,7 +20,7 @@ TAGS = ["File:FileSize",
         "RIFF:AvgBytesPerSec",
         "RIFF:BitsPerSample",
         "RIFF:Comment",
-        "Composite:Duration"]  
+        "Composite:Duration"]
 
 def get_am_battery_state(comment):
     match = BATTERY_REGEX.search(comment)
@@ -91,31 +91,26 @@ def get_comment(filename):
 
 def get_metadata_of_device(filename):
     comment_metadata = get_comment(filename)
-    gain = get_am_gain(comment_metadata)
-    date_with_timezone = get_date_with_timezone(comment_metadata)
-    timezone = get_timezone_name(date_with_timezone)
     serial_number = get_am_id(comment_metadata)
-    return {"Gain"    : gain,
-            "Timezone": timezone,
-            "SerialNumber": serial_number
+    return {"SerialNumber": serial_number
             }
 def get_metadata_of_file(filename):
     comment_metadata = get_comment(filename)
     battery = get_am_battery_state(comment_metadata)
     date_with_timezone = get_date_with_timezone(comment_metadata)
-    #see: https://github.com/sylikc/pyexiftool/issues/21
+    gain = get_am_gain(comment_metadata)
+    timezone = get_timezone_name(date_with_timezone)
+    #see: https://github.com/sylikc/pyexiftool/issues/21 for common_args=["-G"]
     with exiftool.ExifTool(common_args=["-G"]) as et:
         exiftool_metadata = et.get_tags(TAGS, filename)
     dict_metadata_of_file = {"Battery"  : battery,
-                             "Datetime" : date_with_timezone
+                             "Datetime" : date_with_timezone,
+                             "Gain"     : gain,
+                             "Timezone" : timezone
                              }
     for t in TAGS:
         dict_metadata_of_file[t] = exiftool_metadata[t]
     return dict_metadata_of_file
-
-def extract_serial_number(filename):
-    comment_metadata = get_comment(filename)
-    return get_am_id(comment_metadata)
 
 def extract_date(filename):
     comment_metadata = get_comment(filename)
