@@ -8,30 +8,30 @@ from hachoir.core import config as HachoirConfig
 HachoirConfig.quiet = True #to supress warnings when calling extractMetadata of hachoir
 
 
-TAGS_1_FOR_FILE = ["File:FileSize",
-                   "File:BMPVersion",
-                   "File:ImageWidth",
-                   "File:ImageHeight",
-                   "File:Planes",
-                   "File:ImageLength",
-                   "File:PixelsPerMeterX",
-                   "File:PixelsPerMeterY",
-                   "File:NumColors",
-                   "File:NumImportantColors",
-                   "RIFF:FrameRate",
-                   "RIFF:FrameCount",
-                   "RIFF:StreamCount",
-                   "RIFF:AudioSampleCount",
-                   "RIFF:Encoding",
-                   "RIFF:NumChannels",
-                   "RIFF:AvgBytesPerSec",
-                   "RIFF:BitsPerSample",
-                   "Composite:Duration"
-                    ]
+TAGS_1_FOR_FILE = {"File:FileSize"          : "FileSize"          ,
+                   "File:BMPVersion"        : "BMPVersion"        ,
+                   "File:ImageWidth"        : "ImageWidth"        ,
+                   "File:ImageHeight"       : "ImageHeight"       ,
+                   "File:Planes"            : "Planes"            ,
+                   "File:ImageLength"       : "ImageLength"       ,
+                   "File:PixelsPerMeterX"   : "PixelsPerMeterX"   ,
+                   "File:PixelsPerMeterY"   : "PixelsPerMeterY"   ,
+                   "File:NumColors"         : "NumColors"         ,
+                   "File:NumImportantColors": "NumImportantColors",
+                   "RIFF:FrameRate"         : "FrameRate"         ,
+                   "RIFF:FrameCount"        : "FrameCount"        ,
+                   "RIFF:StreamCount"       : "StreamCount"       ,
+                   "RIFF:AudioSampleCount"  : "AudioSampleCount"  ,
+                   "RIFF:Encoding"          : "Encoding"          ,
+                   "RIFF:NumChannels"       : "NumChannels"       ,
+                   "RIFF:AvgBytesPerSec"    : "AvgBytesPerSec"    ,
+                   "RIFF:BitsPerSample"     : "BitsPerSample"     ,
+                   "Composite:Duration"     : "Duration"
+                   }
 
-TAGS_2_FOR_FILE = ["RIFF:MaxDataRate",
-                   "Composite:Megapixels"
-                  ]
+TAGS_2_FOR_FILE = {"RIFF:MaxDataRate"     : "MaxDataRate",
+                   "Composite:Megapixels" : "Megapixels"
+                  }
 
 def metadata_hachoir(filename):
     parser = createParser(filename)
@@ -40,9 +40,9 @@ def metadata_hachoir(filename):
 
 def get_metadata_of_file(filename):
     with exiftool.ExifTool(common_args=["-G"]) as et:
-        exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE, filename)
+        exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE.keys(), filename)
     with exiftool.ExifTool() as et:
-        exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE, filename)
+        exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE.keys(), filename)
     hachoir_metadata_dict  = metadata_hachoir(filename).exportDictionary()
     bit_rate               = hachoir_metadata_dict["Common"]["Bit rate"]
     endianness             = hachoir_metadata_dict["Common"]["Endianness"]
@@ -62,10 +62,10 @@ def get_metadata_of_file(filename):
     dict_metadata_of_file["AudioCompression"]     = audio_compression
     dict_metadata_of_file["AudioBitRate"]         = audio_bit_rate
 
-    for t in TAGS_1_FOR_FILE:
-        dict_metadata_of_file[t] = exiftool_metadata_1[t]
-    for t in TAGS_2_FOR_FILE:
-        dict_metadata_of_file[t] = exiftool_metadata_2[t]
+    for k,v in TAGS_1_FOR_FILE.items():
+        dict_metadata_of_file[v] = exiftool_metadata_1[k]
+    for k,v in TAGS_2_FOR_FILE.items():
+        dict_metadata_of_file[v] = exiftool_metadata_2[k]
 
     return dict_metadata_of_file
 
