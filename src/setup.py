@@ -10,9 +10,9 @@ setup(name="simex", version=0.1,
       description=u"Simplify extraction of metadata for SiPeCaM files",
       author="CONABIO",
       packages=find_packages(),
-      install_requires = ["python-dotenv",
-                          "sgqlc",
-                          "hachoir",
+      install_requires = ["python-dotenv==0.19.2",
+                          "sgqlc==15.0",
+                          "hachoir==3.1.2",
                           "PyExifTool==0.4.13 "
                           ],
       entry_points = {
