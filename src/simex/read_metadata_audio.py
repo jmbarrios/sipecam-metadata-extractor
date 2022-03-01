@@ -92,13 +92,13 @@ def get_date(comment):
                                             format_string_data)) #convert to Y-m-d format
 
 def get_comment(filename):
-    with exiftool.ExifTool() as et:
+    with exiftool.ExifToolHelper() as et:
         return et.get_tag("Comment", filename)
 
 def get_metadata_of_device(filename):
     comment_metadata = get_comment(filename)
     serial_number = get_am_id(comment_metadata)
-    with exiftool.ExifTool() as et:
+    with exiftool.ExifToolHelper() as et:
         exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE, filename)
     dict_metadata_of_file = {}
     for t in TAGS_FOR_DEVICE:
@@ -118,7 +118,7 @@ def get_metadata_of_file(filename):
     gain = get_am_gain(comment_metadata)
     timezone = get_timezone_name(date_with_timezone)
     #see: https://github.com/sylikc/pyexiftool/issues/21 for common_args=["-G"]
-    with exiftool.ExifTool(common_args=["-G"]) as et:
+    with exiftool.ExifToolHelper(common_args=["-G"]) as et:
         exiftool_metadata = et.get_tags(TAGS_FOR_FILE, filename)
     hachoir_metadata_dict = metadata_hachoir(filename).exportDictionary()
     bit_rate = hachoir_metadata_dict["Common"]["Bit rate"]

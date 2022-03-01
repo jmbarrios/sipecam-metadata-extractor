@@ -48,7 +48,7 @@ TAGS_FOR_DEVICE = ["EXIF:Make",
                   ]
 
 def get_metadata_of_device(filename):
-    with exiftool.ExifTool() as et:
+    with exiftool.ExifToolHelper() as et:
         exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE, filename)
     dict_metadata_of_device = {}
     for t in TAGS_FOR_DEVICE:
@@ -59,9 +59,9 @@ def get_metadata_of_device(filename):
     return dict_metadata_of_device
 
 def get_metadata_of_file(filename):
-    with exiftool.ExifTool(common_args=["-G"]) as et:
+    with exiftool.ExifToolHelper(common_args=["-G"]) as et:
         exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE, filename)
-    with exiftool.ExifTool() as et:
+    with exiftool.ExifToolHelper() as et:
         exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE, filename)
     dict_metadata_of_file = {}
     for t in TAGS_1_FOR_FILE:
@@ -71,11 +71,11 @@ def get_metadata_of_file(filename):
     return dict_metadata_of_file
 
 def extract_date(filename):
-    with exiftool.ExifTool() as et:
+    with exiftool.ExifToolHelper() as et:
         datetimeoriginal = et.get_tag("DateTimeOriginal", filename)
         datetimeoriginal_splitted = datetimeoriginal.split(" ")
     return datetimeoriginal_splitted[0].replace(":","-") #example: 2021-07-28
 
 def extract_serial_number(filename):
-    with exiftool.ExifTool() as et:
+    with exiftool.ExifToolHelper() as et:
         return et.get_tag("SerialNumber", filename)
