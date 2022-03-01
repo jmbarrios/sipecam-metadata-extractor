@@ -12,7 +12,7 @@ from simex import get_logger_for_writing_logs_to_file
 from simex import SUFFIXES_SIPECAM, SUFFIXES_SIPECAM_AUDIO, \
 SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO
 from simex.utils.directories_and_files import multiple_file_types
-from simex import read_metadata_image, read_metadata_audio
+from simex import read_metadata_image, read_metadata_video, read_metadata_audio
 
 SUFFIXES_AUDIO_IMAGES = SUFFIXES_SIPECAM_AUDIO + SUFFIXES_SIPECAM_IMAGES
 
@@ -32,8 +32,8 @@ def extract_metadata(filename):
             tuple_metadata_of_file = (filename,read_metadata_image.get_metadata_of_file(filename))
         else:
             if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
-                date_of_file = read_metadata_image.extract_date(filename) #call extract_date for videos
-                tuple_metadata_of_file = (filename,read_metadata_image.extract_date(filename)) #call get_metadata_of_file for videos
+                date_of_file = read_metadata_video.extract_date(filename)
+                tuple_metadata_of_file = (filename,read_metadata_video.get_metadata_of_file(filename))
     tuple_date = (filename, date_of_file)
 
     return (tuple_date, tuple_metadata_of_file)
