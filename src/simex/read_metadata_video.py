@@ -33,20 +33,10 @@ TAGS_2_FOR_FILE = ["RIFF:MaxDataRate",
                    "Composite:Megapixels"
                   ]
 
-TAGS_FOR_DEVICE = ["RIFF:StreamName"]
-
 def metadata_hachoir(filename):
     parser = createParser(filename)
     metadata = extractMetadata(parser)
     return metadata
-
-def get_metadata_of_device(filename):
-    with exiftool.ExifTool() as et:
-        exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE, filename)
-    dict_metadata_of_device = {}
-    for t in TAGS_FOR_DEVICE:
-        dict_metadata_of_device[t] = exiftool_metadata[t]
-    return dict_metadata_of_device
 
 def get_metadata_of_file(filename):
     with exiftool.ExifTool(common_args=["-G"]) as et:
