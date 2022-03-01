@@ -107,16 +107,21 @@ def main():
                                        SUFFIXES_AUDIO_IMAGES)
         not_success = True
         while not_success:
-            filename = next(iterator)
-            logger.info("extraction of metadata of device from %s" % filename)
-            res_extract_metadata_of_device = extract_metadata_of_device(filename)
-            serial_number_file = res_extract_metadata_of_device["SerialNumber"]
-            if serial_number_file:
-                logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
+            try:
+                filename = next(iterator)
+                logger.info("extraction of metadata of device from %s" % filename)
+                res_extract_metadata_of_device = extract_metadata_of_device(filename)
+                serial_number_file = res_extract_metadata_of_device["SerialNumber"]
+                if serial_number_file:
+                    logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
+                    not_success = False
+                    d_output["MetadataDevice"] = res_extract_metadata_of_device
+                if len(d_output["MetadataDevice"].keys()) < 1:
+                    logger.info("FAILED extraction of serial number of files in dir %s" % input_dir)
+            except Exception as e:
+                logger.info(e)
+                logger.info("there were no audios nor images found in dir: %s, serial number can not be retrieved from " % input_dir)
                 not_success = False
-                d_output["MetadataDevice"] = res_extract_metadata_of_device
-        if len(d_output["MetadataDevice"].keys()) < 1:
-            logger.info("FAILED extraction of serial number of files in dir %s" % input_dir)
 
     def extract_metadata_of_files(input_dir,
                                   d_output,
