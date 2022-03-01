@@ -37,7 +37,6 @@ TAGS_1_FOR_FILE = ["EXIF:Make",
 
 TAGS_2_FOR_FILE = ["Composite:GPSLatitude",
                    "Composite:GPSLongitude",
-                   "Composite:GPSPosition",
                    "Composite:Megapixels"
                    ]
 
@@ -66,7 +65,7 @@ def get_metadata_of_file(filename):
     dict_metadata_of_file = {}
     for t in TAGS_1_FOR_FILE:
         if t == "MakerNotes:SerialNumber":
-            dict_metadata_of_file["SerialNumber"] = exiftool_metadata[t]
+            dict_metadata_of_file["SerialNumber"] = exiftool_metadata_1[t]
         else:
             dict_metadata_of_file[t] = exiftool_metadata_1[t]
     for t in TAGS_2_FOR_FILE:
