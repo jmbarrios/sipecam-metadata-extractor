@@ -145,14 +145,14 @@ def main():
             for filename in iterator:
                 logger.info("extraction of date of %s" % filename)
                 tuple_date, tuple_metadata_of_file = extract_metadata(filename)
-                date_file = tuple_date[1] #tuple with filename and date as 1st, 2nd elements resp
+                date_file = tuple_date[1] #tuple with filename and date as 1st and 2nd elements resp
                 if not date_file:
                     logger.info("FAILED extraction of date of file %s" % filename)
                     logger.info("returning empty date")
                 else:
                     logger.info("SUCCESSFUL extraction of date of %s" % filename)
                     d_output["Dates"][filename] = date_file
-                    metadata_file = tuple_metadata_of_file[1] #tuple with filename and metadata as 1st, 2nd elements resp
+                    metadata_file = tuple_metadata_of_file[1] #tuple with filename and metadata as 1st and 2nd elements resp
                     d_output["MetadataFiles"][filename] = metadata_file
 
         if len(d_output["Dates"].keys()) < 1:
