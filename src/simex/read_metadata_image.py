@@ -1,10 +1,9 @@
-import PIL.ExifTags
-from PIL import Image
-import re
-
 import exiftool
 
-TAGS_1_FOR_FILE = ["File:FileSize",
+TAGS_1_FOR_FILE = ["EXIF:Make",
+                   "EXIF:Model",
+                   "MakerNotes:SerialNumber",
+                   "File:FileSize",
                    "File:ExifByteOrder",
                    "File:ImageWidth",
                    "File:ImageHeight",
