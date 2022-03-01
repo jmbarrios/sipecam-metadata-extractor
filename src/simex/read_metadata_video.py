@@ -9,6 +9,7 @@ HachoirConfig.quiet = True #to supress warnings when calling extractMetadata of 
 
 
 TAGS_1_FOR_FILE = {"File:FileSize"          : "FileSize"          ,
+                   "RIFF:DateTimeOriginal"  : "DateTimeOriginal"  ,
                    "File:BMPVersion"        : "BMPVersion"        ,
                    "File:ImageWidth"        : "ImageWidth"        ,
                    "File:ImageHeight"       : "ImageHeight"       ,

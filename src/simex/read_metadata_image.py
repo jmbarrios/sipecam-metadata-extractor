@@ -2,6 +2,7 @@ import exiftool
 
 TAGS_1_FOR_FILE = {"EXIF:Make"                     : "Make"                   ,
                    "EXIF:Model"                    : "Model"                  ,
+                   "EXIF:DateTimeOriginal"         : "DateTimeOriginal"       ,
                    "MakerNotes:SerialNumber"       : "SerialNumber"           ,
                    "File:FileSize"                 : "FileSize"               ,
                    "File:ExifByteOrder"            : "ExifByteOrder"          ,
