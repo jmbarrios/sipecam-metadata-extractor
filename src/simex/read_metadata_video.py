@@ -36,7 +36,7 @@ def metadata_hachoir(filename):
     return metadata
 
 def get_metadata_of_device(filename):
-    with exiftool.ExifToolHelper() as et:
+    with exiftool.ExifTool() as et:
         exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE, filename)
     dict_metadata_of_device = {}
     for t in TAGS_FOR_DEVICE:
@@ -44,9 +44,9 @@ def get_metadata_of_device(filename):
     return dict_metadata_of_device
 
 def get_metadata_of_file(filename):
-    with exiftool.ExifToolHelper(common_args=["-G"]) as et:
+    with exiftool.ExifTool(common_args=["-G"]) as et:
         exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE, filename)
-    with exiftool.ExifToolHelper() as et:
+    with exiftool.ExifTool() as et:
         exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE, filename)
     hachoir_metadata_dict  = metadata_hachoir(filename).exportDictionary()
     bit_rate               = hachoir_metadata_dict["Common"]["Bit rate"]
@@ -75,7 +75,7 @@ def get_metadata_of_file(filename):
     return dict_metadata_of_file
 
 def extract_date(filename):
-    with exiftool.ExifToolHelper() as et:
+    with exiftool.ExifTool() as et:
         datetimeoriginal = et.get_tag("DateTimeOriginal", filename)
         datetimeoriginal_splitted = datetimeoriginal.split(" ")
     return datetimeoriginal_splitted[0].replace(":","-") #example: 2021-07-28
