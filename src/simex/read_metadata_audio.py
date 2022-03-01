@@ -3,6 +3,8 @@ from datetime import datetime
 from datetime import date
 
 import exiftool
+from hachoir.parser import createParser
+from hachoir.metadata import extractMetadata
 
 
 ID_REGEX       = re.compile(r'AudioMoth ([0-9A-Z]{16})')
@@ -13,7 +15,8 @@ BATTERY_REGEX  = re.compile(r'battery state was (\d.\dV)')
 ONLY_DATE_REGEX = re.compile(r'(\d{2}\/\d{2}\/\d{4})')
 ONLY_TIME_REGEX = re.compile(r'(\d{2}:\d{2}:\d{2})')
 
-TAGS_FOR_FILE = ["File:FileSize",
+TAGS_FOR_FILE = ["RIFF:Artist",
+                 "File:FileSize",
                  "RIFF:Encoding",
                  "RIFF:NumChannels",
                  "RIFF:SampleRate",
@@ -103,6 +106,11 @@ def get_metadata_of_device(filename):
     dict_metadata_of_file["SerialNumber"] = serial_number
     return dict_metadata_of_file
 
+def metadata_hachoir(filename):
+    parser = createParser(filename)
+    metadata = extractMetadata(parser)
+    return metadata
+
 def get_metadata_of_file(filename):
     comment_metadata = get_comment(filename)
     battery = get_am_battery_state(comment_metadata)
@@ -112,10 +120,13 @@ def get_metadata_of_file(filename):
     #see: https://github.com/sylikc/pyexiftool/issues/21 for common_args=["-G"]
     with exiftool.ExifTool(common_args=["-G"]) as et:
         exiftool_metadata = et.get_tags(TAGS_FOR_FILE, filename)
+    hachoir_metadata_dict = metadata_hachoir(filename).exportDictionary()
+    bit_rate = hachoir_metadata_dict["Common"]["Bit rate"]
     dict_metadata_of_file = {"Battery"  : battery,
                              "Datetime" : date_with_timezone,
                              "Gain"     : gain,
-                             "Timezone" : timezone
+                             "Timezone" : timezone,
+                             "BitRate"  : bit_rate
                              }
     for t in TAGS_FOR_FILE:
         dict_metadata_of_file[t] = exiftool_metadata[t]
