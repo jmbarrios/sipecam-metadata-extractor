@@ -13,7 +13,7 @@ setup(name="simex", version=0.1,
       install_requires = ["python-dotenv",
                           "sgqlc",
                           "hachoir",
-                          "PyExifTool"
+                          "PyExifTool==0.4.13 "
                           ],
       entry_points = {
           'console_scripts': [
