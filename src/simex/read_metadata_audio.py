@@ -5,6 +5,11 @@ from datetime import date
 import exiftool
 from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
+from hachoir.core import config as HachoirConfig
+
+#see: https://stackoverflow.com/questions/38832691/suppress-warnings-in-hachoir
+HachoirConfig.quiet = True #to supress warnings when calling extractMetadata of hachoir
+
 
 
 ID_REGEX       = re.compile(r'AudioMoth ([0-9A-Z]{16})')
