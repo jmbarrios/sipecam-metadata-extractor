@@ -65,7 +65,10 @@ def get_metadata_of_file(filename):
         exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE, filename)
     dict_metadata_of_file = {}
     for t in TAGS_1_FOR_FILE:
-        dict_metadata_of_file[t] = exiftool_metadata_1[t]
+        if t == "MakerNotes:SerialNumber":
+            dict_metadata_of_file["SerialNumber"] = exiftool_metadata[t]
+        else:
+            dict_metadata_of_file[t] = exiftool_metadata_1[t]
     for t in TAGS_2_FOR_FILE:
         dict_metadata_of_file[t] = exiftool_metadata_2[t]
     return dict_metadata_of_file
