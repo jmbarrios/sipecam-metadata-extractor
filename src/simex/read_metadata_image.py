@@ -1,75 +1,69 @@
 import exiftool
 
-TAGS_1_FOR_FILE = ["EXIF:Make",
-                   "EXIF:Model",
-                   "MakerNotes:SerialNumber",
-                   "File:FileSize",
-                   "File:ExifByteOrder",
-                   "File:ImageWidth",
-                   "File:ImageHeight",
-                   "File:EncodingProcess",
-                   "File:BitsPerSample",
-                   "File:ColorComponents",
-                   "File:YCbCrSubSampling",
-                   "EXIF:XResolution",
-                   "EXIF:YResolution",
-                   "EXIF:ResolutionUnit",
-                   "EXIF:YCbCrPositioning",
-                   "EXIF:ExposureTime",
-                   "EXIF:ISO",
-                   "EXIF:TimeZoneOffset",
-                   "EXIF:ComponentsConfiguration",
-                   "EXIF:ColorSpace",
-                   "EXIF:GPSLatitudeRef",
-                   "EXIF:GPSLongitudeRef",
-                   "MakerNotes:AmbientTemperature",
-                   "MakerNotes:Contrast",
-                   "MakerNotes:Brightness",
-                   "MakerNotes:Sharpness",
-                   "MakerNotes:Saturation",
-                   "MakerNotes:Flash",
-                   "MakerNotes:AmbientInfrared",
-                   "MakerNotes:AmbientLight",
-                   "MakerNotes:MotionSensitivity",
-                   "MakerNotes:BatteryVoltage",
-                   "MakerNotes:BatteryVoltageAvg",
-                   ]
+TAGS_1_FOR_FILE = {"EXIF:Make"                     : "Make"                   ,
+                   "EXIF:Model"                    : "Model"                  ,
+                   "MakerNotes:SerialNumber"       : "SerialNumber"           ,
+                   "File:FileSize"                 : "FileSize"               ,
+                   "File:ExifByteOrder"            : "ExifByteOrder"          ,
+                   "File:ImageWidth"               : "ImageWidth"             ,
+                   "File:ImageHeight"              : "ImageHeight"            ,
+                   "File:EncodingProcess"          : "EncodingProcess"        ,
+                   "File:BitsPerSample"            : "BitsPerSample"          ,
+                   "File:ColorComponents"          : "ColorComponents"        ,
+                   "File:YCbCrSubSampling"         : "YCbCrSubSampling"       ,
+                   "EXIF:XResolution"              : "XResolution"            ,
+                   "EXIF:YResolution"              : "YResolution"            ,
+                   "EXIF:ResolutionUnit"           : "ResolutionUnit"         ,
+                   "EXIF:YCbCrPositioning"         : "YCbCrPositioning"       ,
+                   "EXIF:ExposureTime"             : "ExposureTime"           ,
+                   "EXIF:ISO"                      : "ISO"                    ,
+                   "EXIF:TimeZoneOffset"           : "TimeZoneOffset"         ,
+                   "EXIF:ComponentsConfiguration"  : "ComponentsConfiguration",
+                   "EXIF:ColorSpace"               : "ColorSpace"             ,
+                   "EXIF:GPSLatitudeRef"           : "GPSLatitudeRef"         ,
+                   "EXIF:GPSLongitudeRef"          : "GPSLongitudeRef"        ,
+                   "MakerNotes:AmbientTemperature" : "AmbientTemperature"     ,
+                   "MakerNotes:Contrast"           : "Contrast"               ,
+                   "MakerNotes:Brightness"         : "Brightness"             ,
+                   "MakerNotes:Sharpness"          : "Sharpness"              ,
+                   "MakerNotes:Saturation"         : "Saturation"             ,
+                   "MakerNotes:Flash"              : "Flash"                  ,
+                   "MakerNotes:AmbientInfrared"    : "AmbientInfrared"        ,
+                   "MakerNotes:AmbientLight"       : "AmbientLight"           ,
+                   "MakerNotes:MotionSensitivity"  : "MotionSensitivity"      ,
+                   "MakerNotes:BatteryVoltage"     : "BatteryVoltage"         ,
+                   "MakerNotes:BatteryVoltageAvg"  : "BatteryVoltageAvg"      ,
+                  }
 
-TAGS_2_FOR_FILE = ["Composite:GPSLatitude",
-                   "Composite:GPSLongitude",
-                   "Composite:Megapixels"
-                   ]
+TAGS_2_FOR_FILE = {"Composite:GPSLatitude"  : "GPSLatitude" ,
+                   "Composite:GPSLongitude" : "GPSLongitude",
+                   "Composite:Megapixels"   : "Megapixels"
+                  }
 
 
-TAGS_FOR_DEVICE = ["EXIF:Make",
-                   "EXIF:Model",
-                   "MakerNotes:SerialNumber"
-                  ]
+TAGS_FOR_DEVICE = {"EXIF:Make"               : "Make"        ,
+                   "EXIF:Model"              : "Model"       ,
+                   "MakerNotes:SerialNumber" : "SerialNumber"
+                  }
 
 def get_metadata_of_device(filename):
     with exiftool.ExifTool() as et:
-        exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE, filename)
+        exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE.keys(), filename)
     dict_metadata_of_device = {}
-    for t in TAGS_FOR_DEVICE:
-        if t == "MakerNotes:SerialNumber":
-            dict_metadata_of_device["SerialNumber"] = exiftool_metadata[t]
-        else:
-            dict_metadata_of_device[t] = exiftool_metadata[t]
+    for k,v in TAGS_FOR_DEVICE.items():
+        dict_metadata_of_device[v] = exiftool_metadata[k]
     return dict_metadata_of_device
 
 def get_metadata_of_file(filename):
     with exiftool.ExifTool(common_args=["-G"]) as et:
-        exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE, filename)
+        exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE.keys(), filename)
     with exiftool.ExifTool() as et:
-        exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE, filename)
+        exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE.keys(), filename)
     dict_metadata_of_file = {}
-    for t in TAGS_1_FOR_FILE:
-        if t == "MakerNotes:SerialNumber":
-            dict_metadata_of_file["SerialNumber"] = exiftool_metadata_1[t]
-        else:
-            dict_metadata_of_file[t] = exiftool_metadata_1[t]
-    for t in TAGS_2_FOR_FILE:
-        dict_metadata_of_file[t] = exiftool_metadata_2[t]
+    for k,v in TAGS_1_FOR_FILE.items():
+        dict_metadata_of_file[v] = exiftool_metadata_1[k]
+    for k,v in TAGS_2_FOR_FILE.items():
+        dict_metadata_of_file[v] = exiftool_metadata_2[k]
     return dict_metadata_of_file
 
 def extract_date(filename):
