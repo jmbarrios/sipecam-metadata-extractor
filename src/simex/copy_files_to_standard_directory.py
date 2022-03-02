@@ -91,62 +91,127 @@ def main():
 
     filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
 
+    def modify_json_metadata_of_files():
+        pass
+
+    def modify_json_metadata_of_device(d_source,
+                                       nom_node,
+                                       cumulus_name,
+                                       date_deploy):
+        dict_output_metadatadevice                     = d_source["MetadataDevice"].copy()
+        dict_output_metadatadevice["NomenclatureNode"] = nom_node
+        dict_output_metadatadevice["CumulusName"]      = cumulus_name
+        dict_output_metadatadevice["DateDeployment"]   = date_deploy
+        return dict_output_metadatadevice
+
     def move_files_to_standard_dir_and_modify_json_metadata(src_dir,
                                                             dst_dir,
-                                                            d_source):
+                                                            d_source,
+                                                            d_output_metadatadevice,
+                                                            type_files_in_dir):
+
+        if type_files_in_dir == "audios":
+            dir_pathlib = pathlib.Path(src_dir)
+            dict_output_metadata_audios_files  = {}
+            dict_output_metadata_audios_files["MetadataDevice"] = d_output_metadatadevice
+            standard_dir_audios = os.path.join(dst_dir,
+                                               type_files_in_dir,
+                                               dir_pathlib.parent.name #audible or ultrasonico
+                                               )
+            standard_dir_audios_pathlib = pathlib.Path(standard_dir_audios)
+            os.makedirs(standard_dir_audios, exist_ok=True)
+            file_with_metadata_updated_audios = os.path.join(standard_dir_audios,
+                                                             standard_dir_audios_pathlib.name + \
+                                                             "_simex_metadata_files_and_device.json")
+            write_dst_audios = open(file_with_metadata_updated_audios, "w+")
+            json.dump(dict_output_metadata_audios_files, write_dst_audios)
+            dict_output_metadata_audios_files["MetadataFiles"] = {}
+        else:
+            if type_files_in_dir == "images" or "videos":
+                dict_output_metadata_images_files  = {}
+                dict_output_metadata_videos_files  = {}
+                dict_output_metadata_images_files["MetadataDevice"] = d_output_metadatadevice
+                dict_output_metadata_videos_files["MetadataDevice"] = d_output_metadatadevice
+                standard_dir_images = os.path.join(dst_dir,
+                                                   "images")
+                standard_dir_videos = os.path.join(dst_dir,
+                                                   "videos")
+                standard_dir_images_pathlib = pathlib.Path(standard_dir_images)
+                standard_dir_videos_pathlib = pathlib.Path(standard_dir_videos)
+                os.makedirs(standard_dir_images, exist_ok=True)
+                os.makedirs(standard_dir_videos, exist_ok=True)
+                file_with_metadata_updated_images = os.path.join(standard_dir_images,
+                                                                 standard_dir_images_pathlib.name + \
+                                                                 "_simex_metadata_files_and_device.json")
+                file_with_metadata_updated_videos = os.path.join(standard_dir_videos,
+                                                                 standard_dir_videos_pathlib.name + \
+                                                                 "_simex_metadata_files_and_device.json")
+                write_dst_images = open(file_with_metadata_updated_images, "w+")
+                write_dst_videos = open(file_with_metadata_updated_videos, "w+")
+                dict_output_metadata_images_files["MetadataFiles"] = {}
+                dict_output_metadata_videos_files["MetadataFiles"] = {}
+
         iterator = multiple_file_types(src_dir,
                                        SUFFIXES_SIPECAM)
         for filename in iterator:
             f_pathlib = pathlib.Path(filename)
             f_pathlib_suffix = f_pathlib.suffix
-            filename_md5 = "".join([md5_for_file(filename),
-                                    f_pathlib_suffix])
+            filename_md5 = "".join([md5_for_file(filename),#basename of filename
+                                    f_pathlib_suffix])#with suffix
+
             if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                standard_dir = os.path.join(dst_dir,
-                                            "audios",
-                                            f_pathlib.parent.name #audible or ultrasonico
-                                            )
-                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_audios,
                                                                            filename_md5)
                            )
-                os.makedirs(standard_dir, exist_ok=True)
-                dst_filename = os.path.join(standard_dir, filename_md5)
-                f_pathlib.rename(dst_filename)
+                dst_filename = os.path.join(standard_dir_audios, filename_md5)
+                f_pathlib.rename(dst_filename) #move
+                dict_output_metadata_audios_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+
             else:
                 if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES:
-                    standard_dir = os.path.join(dst_dir,
-                                                "images")
-                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_images,
                                                                                filename_md5)
                                )
-                    os.makedirs(standard_dir, exist_ok=True)
-                    dst_filename = os.path.join(standard_dir, filename_md5)
+                    dst_filename = os.path.join(standard_dir_images, filename_md5)
                     f_pathlib.rename(dst_filename)
+                    dict_output_metadata_images_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+
                 else:
                     if f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
-                        standard_dir = os.path.join(dst_dir,
-                                                    "videos")
-                        logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                        logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_videos,
                                                                                    filename_md5)
                                    )
-                        os.makedirs(standard_dir, exist_ok=True)
-                        dst_filename = os.path.join(standard_dir, filename_md5)
+                        dst_filename = os.path.join(standard_dir_videos, filename_md5)
                         f_pathlib.rename(dst_filename)
+                        dict_output_metadata_videos_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+
+        if type_files_in_dir == "audios":
+            json.dump(dict_output_metadata_audios_files, write_dst_audios)
+            write_dst_audios.close()
+        else:
+            if type_files_in_dir == "images" or "videos":
+                json.dump(dict_output_metadata_images_files, write_dst_images)
+                json.dump(dict_output_metadata_videos_files, write_dst_videos)
+                write_dst_images.close()
+                write_dst_videos.close()
 
     #make query assuming first_date_str is less than date of deployment of device
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+        type_files_in_dir = "audios"
         query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                    first_date_str,
                                                                                    second_date_str,
                                                                                    file_type="audio")
     else:
         if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+            type_files_in_dir = "images"
             query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                        first_date_str,
                                                                                        second_date_str,
                                                                                        file_type="image")
         else:
             if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                type_files_in_dir = "videos"
                 query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                            first_date_str,
                                                                                            second_date_str,
@@ -167,6 +232,11 @@ def main():
                                                                                            cumulus_name,
                                                                                            date_of_deployment)
                        )
+            logger.info("modifying dict MetadataDevice")
+            dict_output_metadatadevice = modify_json_metadata_of_device(dict_source,
+                                                                        nomenclature_node,
+                                                                        cumulus_name,
+                                                                        date_of_deployment)
             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                   cumulus_name,
                                                   nomenclature_node,
@@ -175,7 +245,11 @@ def main():
             logger.info("path where files will be copied: %s" % path_with_files_copied)
             move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
                                                                 path_with_files_copied,
-                                                                dict_source)
+                                                                dict_source,
+                                                                dict_output_metadatadevice,
+                                                                type_files_in_dir)
+
+            #write new dict for metadata device and files
 
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
@@ -214,6 +288,11 @@ def main():
                                                                                                            cumulus_name,
                                                                                                            date_of_deployment)
                                         )
+                            logger.info("modifying dict MetadataDevice")
+                            dict_output_metadatadevice = modify_json_metadata_of_device(dict_source,
+                                                                                        nomenclature_node,
+                                                                                        cumulus_name,
+                                                                                        date_of_deployment)
                             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                                   cumulus_name,
                                                                   nomenclature_node,
@@ -222,7 +301,9 @@ def main():
                             logger.info("path where files will be copied: %s" % path_with_files_copied)
                             move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
                                                                                 path_with_files_copied,
-                                                                                dict_source)
+                                                                                dict_source,
+                                                                                dict_output_metadatadevice,
+                                                                                type_files_in_dir)
                     except Exception as e:
                         logger.info(e)
                         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
