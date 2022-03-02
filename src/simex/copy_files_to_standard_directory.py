@@ -4,6 +4,7 @@ import json
 import pathlib
 import datetime
 import shutil
+import hashlib
 
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.zendro import query_for_copy_files_to_standard_directory, \
@@ -12,6 +13,20 @@ query_alternative_for_copy_files_to_standard_directory
 from simex.utils.directories_and_files import multiple_file_types
 from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO, \
 SUFFIXES_SIPECAM
+
+def md5_for_file(path, block_size=256*128):
+    """
+    Block size directly depends on the block size of your filesystem
+    to avoid performances issues
+    Here I have blocks of 4096 octets (Default NTFS)
+    See:
+    https://stackoverflow.com/questions/1131220/get-md5-hash-of-big-files-in-python
+    """
+    md5 = hashlib.md5()
+    with open(path,'rb') as f:
+        for chunk in iter(lambda: f.read(block_size), b''):
+             md5.update(chunk)
+    return md5.hexdigest()
 
 def arguments_parse():
     help = """
@@ -76,6 +91,49 @@ def main():
 
     filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
 
+    def move_files_to_standard_dir_and_modify_json_metadata(src_dir,
+                                                            dst_dir,
+                                                            d_source):
+        iterator = multiple_file_types(src_dir,
+                                       SUFFIXES_SIPECAM)
+        for filename in iterator:
+            f_pathlib = pathlib.Path(filename)
+            f_pathlib_suffix = f_pathlib.suffix
+            filename_md5 = "".join([md5_for_file(filename),
+                                    f_pathlib_suffix])
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                standard_dir = os.path.join(dst_dir,
+                                            "audios",
+                                            f_pathlib.parent.name #audible or ultrasonico
+                                            )
+                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                           filename_md5)
+                           )
+                os.makedirs(standard_dir, exist_ok=True)
+                dst_filename = os.path.join(standard_dir, filename_md5)
+                f_pathlib.rename(dst_filename)
+            else:
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES:
+                    standard_dir = os.path.join(dst_dir,
+                                                "images")
+                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                               filename_md5)
+                               )
+                    os.makedirs(standard_dir, exist_ok=True)
+                    dst_filename = os.path.join(standard_dir, filename_md5)
+                    f_pathlib.rename(dst_filename)
+                else:
+                    if f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
+                        standard_dir = os.path.join(dst_dir,
+                                                    "videos")
+                        logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                                   filename_md5)
+                                   )
+                        os.makedirs(standard_dir, exist_ok=True)
+                        dst_filename = os.path.join(standard_dir, filename_md5)
+                        f_pathlib.rename(dst_filename)
+
+    #make query assuming first_date_str is less than date of deployment of device
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
         query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
                                                                                    first_date_str,
@@ -96,28 +154,6 @@ def main():
 
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
 
-    def copy_files_to_standard_dir(src_dir, dst_dir):
-        iterator = multiple_file_types(src_dir,
-                                       SUFFIXES_SIPECAM)
-        for filename in iterator:
-            f_pathlib = pathlib.Path(filename)
-            if f_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
-                standard_dir = os.path.join(dst_dir,
-                                            "audios",
-                                            f_pathlib.parent.name)
-                logger.info("File %s will be copied to: %s" % (filename, standard_dir))
-            else:
-                if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
-                    standard_dir = os.path.join(dst_dir,
-                                                "images")
-                    logger.info("File %s will be copied to: %s" % (filename, standard_dir))
-
-                else:
-                    if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
-                        standard_dir = os.path.join(dst_dir,
-                                                    "videos")
-                        logger.info("File %s will be copied to: %s" % (filename, standard_dir))
-
     try:
         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
         if len(device_deploymentsFilter_list) == 1:
@@ -137,9 +173,9 @@ def main():
                                                   serial_number,
                                                   date_of_deployment)
             logger.info("path where files will be copied: %s" % path_with_files_copied)
-            os.makedirs(path_with_files_copied, exist_ok=True)
-            copy_files_to_standard_dir(directory_with_file_of_serial_number_and_dates,
-                                       path_with_files_copied)
+            move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
+                                                                path_with_files_copied,
+                                                                dict_source)
 
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
@@ -167,24 +203,34 @@ def main():
                     logger.info("Query alternative to Zendro GQL: %s" % operation_sgqlc)
                     try:
                         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
-                        device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
-                        nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
-                        cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
-                        date_of_deployment = list_dates_device_deployment[idx_date]
-                        logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
-                        logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
-                                                                                                       nomenclature_node,
-                                                                                                       cumulus_name,
-                                                                                                       date_of_deployment)
-                                   )
+                        if len(device_deploymentsFilter_list) == 1:
+                            device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
+                            nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
+                            cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
+                            date_of_deployment = list_dates_device_deployment[idx_date]
+                            logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
+                            logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
+                                                                                                           nomenclature_node,
+                                                                                                           cumulus_name,
+                                                                                                           date_of_deployment)
+                                        )
+                            path_with_files_copied = os.path.join(path_for_standard_directory,
+                                                                  cumulus_name,
+                                                                  nomenclature_node,
+                                                                  serial_number,
+                                                                  date_of_deployment)
+                            logger.info("path where files will be copied: %s" % path_with_files_copied)
+                            move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
+                                                                                path_with_files_copied,
+                                                                                dict_source)
                     except Exception as e:
                         logger.info(e)
-                        logger.info("unsuccessful query %s" % operation_sgqlc)
+                        logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
                 except Exception as e:
                     logger.info(e)
-                    logger.info("unsuccessful query %s" % operation_sgqlc)
-            else: #len of list is >=1 then there's no unique date of deployment of device
+                    logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+            else: #len of list is >1 then there's no unique date of deployment of device
                 logger.info("There's no unique date of deployment and can not select one date to create standard directory")
     except Exception as e:
         logger.info(e)
-        logger.info("unsuccessful query %s" % operation_sgqlc)
+        logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
