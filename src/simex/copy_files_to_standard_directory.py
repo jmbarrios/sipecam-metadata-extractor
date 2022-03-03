@@ -116,7 +116,7 @@ def main():
             dict_output_metadata_audios_files["MetadataDevice"] = d_output_metadatadevice
             standard_dir_audios = os.path.join(dst_dir,
                                                type_files_in_dir,
-                                               dir_pathlib.parent.name #audible or ultrasonico
+                                               dir_pathlib.name #audible or ultrasonico, need to check how to get this words
                                                )
             standard_dir_audios_pathlib = pathlib.Path(standard_dir_audios)
             os.makedirs(standard_dir_audios, exist_ok=True)
@@ -124,7 +124,6 @@ def main():
                                                              standard_dir_audios_pathlib.name + \
                                                              "_simex_metadata_files_and_device.json")
             write_dst_audios = open(file_with_metadata_updated_audios, "w+")
-            json.dump(dict_output_metadata_audios_files, write_dst_audios)
             dict_output_metadata_audios_files["MetadataFiles"] = {}
         else:
             if type_files_in_dir == "images" or "videos":
