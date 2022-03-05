@@ -122,9 +122,14 @@ def main():
                 logger.info(e)
                 logger.info("there were no audios nor images found in dir: %s, serial number can not be retrieved from " % input_dir)
                 not_success = False
+        #as videos have no coordinates in d_output["GPSFile"] for images they will be saved
+        f_pathlib = pathlib.Path(filename)
+        if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+            d_output["GPSFile"] = read_metadata_image.extract_gps(filename)
 
     def extract_metadata_of_files(input_dir,
                                   d_output,
+                                  d_gps_for_videos,
                                   number_of_processes=4):
         iterator = multiple_file_types(input_dir,
                                        SUFFIXES_SIPECAM)
@@ -146,6 +151,13 @@ def main():
                         d_output["Dates"][filename] = date_file
                         filename, metadata_file = t[1] #t[1] tuple with filename and metadata as 1st, 2nd elements resp
                         d_output["MetadataFiles"][filename] = metadata_file
+                        #as videos have no coordinates variable d_gps_for_videos will be used to assign them
+                        f_pathlib = pathlib.Path(filename)
+                        if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                            d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
+                            d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
+                            d_output["MetadataFiles"][filename]["GPSLatitude"]     = d_gps_for_videos["GPSLatitude"]
+                            d_output["MetadataFiles"][filename]["GPSLongitude"]    = d_gps_for_videos["GPSLongitude"]
         else:
             for filename in iterator:
                 logger.info("extraction of date of %s" % filename)
@@ -198,10 +210,19 @@ def main():
 
     with open(output_filename, "w") as dst:
         dict_output = {}
+        dict_gps_for_videos = {}
         extract_metadata_of_device_from_files(input_directory,
                                               dict_output)
+        try:
+            dict_gps_for_videos = dict_output["GPSFile"]
+        except Exception as e:
+            logger.info("GPSFile key not found for videos, files from directory are of audio")
         extract_metadata_of_files(input_directory,
-                                  dict_output)
-
+                                  dict_output,
+                                  dict_gps_for_videos)
+        try:
+            del dict_output["GPSFile"]
+        except Exception as e:
+            logger.info("GPSFile key not found for videos, files from directory are of audio")
         json.dump(dict_output, dst)
 
