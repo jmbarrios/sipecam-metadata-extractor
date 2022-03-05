@@ -47,6 +47,10 @@ TAGS_FOR_DEVICE = {"EXIF:Make"               : "Make"        ,
                    "MakerNotes:SerialNumber" : "SerialNumber"
                   }
 
+TAGS_FOR_GPS = {"Composite:GPSLatitude"  : "GPSLatitude",
+                "Composite:GPSLongitude" : "GPSLongitude"
+               }
+
 def get_metadata_of_device(filename):
     with exiftool.ExifTool() as et:
         exiftool_metadata = et.get_tags(TAGS_FOR_DEVICE.keys(), filename)
@@ -76,3 +80,14 @@ def extract_date(filename):
 def extract_serial_number(filename):
     with exiftool.ExifTool() as et:
         return et.get_tag("SerialNumber", filename)
+
+def extract_gps(filename):
+    with exiftool.ExifTool(common_args=["-G"]) as et:
+        gps_metadata = {"GPSLatitudeRef" : et.get_tag("GPSLatitudeRef", filename),
+                        "GPSLongitudeRef": et.get_tag("GPSLongitudeRef", filename)
+                       }
+    with exiftool.ExifTool() as et:
+        exiftool_metadata  = et.get_tags(TAGS_FOR_GPS.keys(), filename)
+    for k,v in TAGS_FOR_GPS.items():
+        gps_metadata[v] = exiftool_metadata[k]
+    return gps_metadata
