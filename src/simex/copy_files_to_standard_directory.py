@@ -5,6 +5,7 @@ import pathlib
 import datetime
 import shutil
 import hashlib
+import re
 
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.zendro import query_for_copy_files_to_standard_directory, \
@@ -30,9 +31,9 @@ def md5_for_file(path, block_size=256*128):
 
 def arguments_parse():
     help = """
-Copy files to directory of server. Path that will have the files is created
+Move files to directory of server. Path that will have the files is created
 according to:
-cumulus_name/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
+cumulus_name/node_nomenclature/category integrity of node/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
 
 --------------
 Example usage:
@@ -114,9 +115,18 @@ def main():
             dir_pathlib = pathlib.Path(src_dir)
             dict_output_metadata_audios_files  = {}
             dict_output_metadata_audios_files["MetadataDevice"] = d_output_metadatadevice
+            filename_key = next(iter(d_source["MetadataFiles"]))
+            samplerate = d_source["MetadataFiles"][filename_key]["SampleRate"]
+            if samplerate == 384000:
+                type_audio = "Ultrasonico"
+            else:
+                if samplerate == 48000:
+                    type_audio = "Audible"
+                else:
+                    type_audio = "Audible_Ultrasonico"
             standard_dir_audios = os.path.join(dst_dir,
                                                type_files_in_dir,
-                                               dir_pathlib.name #audible or ultrasonico, need to check how to get this words
+                                               type_audio
                                                )
             standard_dir_audios_pathlib = pathlib.Path(standard_dir_audios)
             os.makedirs(standard_dir_audios, exist_ok=True)
@@ -127,72 +137,55 @@ def main():
             dict_output_metadata_audios_files["MetadataFiles"] = {}
         else:
             if type_files_in_dir == "images" or "videos":
-                dict_output_metadata_images_files  = {}
-                dict_output_metadata_videos_files  = {}
-                dict_output_metadata_images_files["MetadataDevice"] = d_output_metadatadevice
-                dict_output_metadata_videos_files["MetadataDevice"] = d_output_metadatadevice
-                standard_dir_images = os.path.join(dst_dir,
-                                                   "images")
-                standard_dir_videos = os.path.join(dst_dir,
-                                                   "videos")
-                standard_dir_images_pathlib = pathlib.Path(standard_dir_images)
-                standard_dir_videos_pathlib = pathlib.Path(standard_dir_videos)
-                os.makedirs(standard_dir_images, exist_ok=True)
-                os.makedirs(standard_dir_videos, exist_ok=True)
-                file_with_metadata_updated_images = os.path.join(standard_dir_images,
-                                                                 standard_dir_images_pathlib.name + \
-                                                                 "_simex_metadata_files_and_device.json")
-                file_with_metadata_updated_videos = os.path.join(standard_dir_videos,
-                                                                 standard_dir_videos_pathlib.name + \
-                                                                 "_simex_metadata_files_and_device.json")
-                write_dst_images = open(file_with_metadata_updated_images, "w+")
-                write_dst_videos = open(file_with_metadata_updated_videos, "w+")
-                dict_output_metadata_images_files["MetadataFiles"] = {}
-                dict_output_metadata_videos_files["MetadataFiles"] = {}
+                dict_output_metadata_images_videos_files  = {}
+                dict_output_metadata_images_videos_files["MetadataDevice"] = d_output_metadatadevice
+                standard_dir_images_videos = os.path.join(dst_dir,
+                                                          "images_videos")
+                standard_dir_images_videos_pathlib = pathlib.Path(standard_dir_images_videos)
+                os.makedirs(standard_dir_images_videos_pathlib, exist_ok=True)
+                file_with_metadata_updated_images_videos = os.path.join(standard_dir_images_videos,
+                                                                        standard_dir_images_videos_pathlib.name + \
+                                                                        "_simex_metadata_files_and_device.json")
+                write_dst_images_videos = open(file_with_metadata_updated_images_videos, "w+")
+                dict_output_metadata_images_videos_files["MetadataFiles"] = {}
 
         iterator = multiple_file_types(src_dir,
                                        SUFFIXES_SIPECAM)
         for filename in iterator:
             f_pathlib = pathlib.Path(filename)
             f_pathlib_suffix = f_pathlib.suffix
-            filename_md5 = "".join([md5_for_file(filename),#basename of filename
-                                    f_pathlib_suffix])#with suffix
-
+            filename_md5 = md5_for_file(filename) #md5 will be basename of filename
             if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                filename_std = "".join([filename_md5,
+                                        f_pathlib_suffix])
                 logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_audios,
-                                                                           filename_md5)
+                                                                           filename_std)
                            )
-                dst_filename = os.path.join(standard_dir_audios, filename_md5)
+                dst_filename = os.path.join(standard_dir_audios, filename_std)
                 f_pathlib.rename(dst_filename) #move
                 dict_output_metadata_audios_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
 
             else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES:
-                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_images,
-                                                                               filename_md5)
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
+                    filename_number = re.findall("[0-9]{1,}", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+                    filename_std = "".join([filename_md5,
+                                            "_",
+                                            filename_number,
+                                            f_pathlib_suffix])
+                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_images_videos,
+                                                                               filename_std)
                                )
-                    dst_filename = os.path.join(standard_dir_images, filename_md5)
+                    dst_filename = os.path.join(standard_dir_images_videos, filename_std)
                     f_pathlib.rename(dst_filename)
-                    dict_output_metadata_images_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-
-                else:
-                    if f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
-                        logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir_videos,
-                                                                                   filename_md5)
-                                   )
-                        dst_filename = os.path.join(standard_dir_videos, filename_md5)
-                        f_pathlib.rename(dst_filename)
-                        dict_output_metadata_videos_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+                    dict_output_metadata_images_videos_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
 
         if type_files_in_dir == "audios":
             json.dump(dict_output_metadata_audios_files, write_dst_audios)
             write_dst_audios.close()
         else:
             if type_files_in_dir == "images" or "videos":
-                json.dump(dict_output_metadata_images_files, write_dst_images)
-                json.dump(dict_output_metadata_videos_files, write_dst_videos)
-                write_dst_images.close()
-                write_dst_videos.close()
+                json.dump(dict_output_metadata_images_videos_files, write_dst_images_videos)
+                write_dst_images_videos.close()
 
     #make query assuming first_date_str is less than date of deployment of device
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
