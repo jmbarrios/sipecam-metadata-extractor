@@ -39,7 +39,7 @@ cumulus_name/node_nomenclature/category integrity of node/date_of_device_deploym
 Example usage:
 --------------
 
-copy_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/filename.json
+move_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/filename.json
 
 """
     parser = argparse.ArgumentParser(description=help,
@@ -60,7 +60,7 @@ def main():
     args = arguments_parse()
     directory_with_file_of_serial_number_and_dates = args.directory_with_file_of_serial_number_and_dates
     path_for_standard_directory = args.path_for_standard_directory
-    filename_for_logs = "logs_simex_copy_files_to_standard_directory"
+    filename_for_logs = "logs_simex_move_files_to_standard_directory"
     logger = get_logger_for_writing_logs_to_file(directory_with_file_of_serial_number_and_dates,
                                                  filename_for_logs)
     input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_dates).name
@@ -234,7 +234,7 @@ def main():
                                                   nomenclature_node,
                                                   serial_number,
                                                   date_of_deployment)
-            logger.info("path where files will be copied: %s" % path_with_files_copied)
+            logger.info("path where files will be moved: %s" % path_with_files_copied)
             move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
                                                                 path_with_files_copied,
                                                                 dict_source,
@@ -290,7 +290,7 @@ def main():
                                                                   nomenclature_node,
                                                                   serial_number,
                                                                   date_of_deployment)
-                            logger.info("path where files will be copied: %s" % path_with_files_copied)
+                            logger.info("path where files will be moved: %s" % path_with_files_copied)
                             move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
                                                                                 path_with_files_copied,
                                                                                 dict_source,
