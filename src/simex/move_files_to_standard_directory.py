@@ -269,9 +269,6 @@ def main():
                                        dict_source,
                                        dict_output_metadatadevice,
                                        type_files_in_dir)
-
-            #write new dict for metadata device and files
-
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
                 logger.info("last query wasn't successful")
