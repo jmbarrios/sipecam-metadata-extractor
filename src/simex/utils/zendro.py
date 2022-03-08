@@ -48,7 +48,25 @@ def get_sgqlc_endpoint_and_operation_for_query():
     return (endpoint,
             Operation(sipecam_zendro_schema.Query))
 
-def query_for_copy_files_to_standard_directory(serial_number,
+def auxiliar_func_for_query_move_using_file_type(op,
+                                                 serial_number,
+                                                 file_type):
+    dict_for_physical_devices = {"field": "",
+                                 "value": serial_number,
+                                 "operator": "like"}
+    if file_type == "image" or file_type == "video":
+        dict_for_physical_devices["field"] = "serial_number"
+        op.physical_devices(pagination={"limit": 0},
+                            search=dict_for_physical_devices)
+    else:
+        if file_type == "audio":
+            dict_for_physical_devices["field"] = "comments"
+            dict_for_physical_devices["value"] = "ADM" + dict_for_physical_devices["value"]
+            op.physical_devices(pagination={"limit": 0},
+                                search=dict_for_physical_devices)
+
+
+def query_for_move_files_to_standard_directory(serial_number,
                                                first_date,
                                                second_date,
                                                file_type):
@@ -74,31 +92,23 @@ def query_for_copy_files_to_standard_directory(serial_number,
                                                  {
                                                   node {
                                                       nomenclatura
+                                                      cat_integr
+                                                      ecosystems{
+                                                          name
+                                                                }
                                                        }
                                                   cumulus {
                                                       name
                                                        }
                                                   date_deployment
+                                                  latitude
+                                                  longitude
                                                   }
                         }
           }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
-
-    dict_for_physical_devices = {"field": "",
-                                 "value": serial_number,
-                                 "operator": "like"}
-
-    if file_type == "image" or file_type == "video":
-        dict_for_physical_devices["field"] = "serial_number"
-        op.physical_devices(pagination={"limit": 0},
-                            search=dict_for_physical_devices)
-    else:
-        if file_type == "audio":
-            dict_for_physical_devices["field"] = "comments"
-            dict_for_physical_devices["value"] = "ADM" + dict_for_physical_devices["value"]
-            op.physical_devices(pagination={"limit": 0},
-                                search=dict_for_physical_devices)
+    auxiliar_func_for_query_move_using_file_type(op, serial_number, file_type)
 
     dict_for_device_deployments_filter_1 = {"field"   : "date_deployment",
                                             "value"   : first_date,
@@ -117,12 +127,17 @@ def query_for_copy_files_to_standard_directory(serial_number,
                                                           }
                                                   )
     op.physical_devices.device_deployments_filter.node.nomenclatura() #after this line op has type sgqlc selection
+    op.physical_devices.device_deployments_filter.node.cat_integr()
+    op.physical_devices.device_deployments_filter.node.ecosystems.name()
     op.physical_devices.device_deployments_filter.cumulus.name()
     op.physical_devices.device_deployments_filter.date_deployment()
+    op.physical_devices.device_deployments_filter.latitude()
+    op.physical_devices.device_deployments_filter.longitude()
     query_result = endpoint(op)
     return (query_result, op)
 
-def query_alternative_auxiliar_for_copy_files_to_standard_directory(serial_number):
+def query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
+                                                                    file_type):
     """
     Execute in GQL of Zendro:
     query {
@@ -139,16 +154,14 @@ def query_alternative_auxiliar_for_copy_files_to_standard_directory(serial_numbe
     }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
-    op.physical_devices(pagination={"limit": 0},
-                        search={"field": "serial_number",
-                                "value": serial_number,
-                                "operator": "like"})
+    auxiliar_func_for_query_move_using_file_type(op, serial_number, file_type)
     op.physical_devices.device_deployments_filter(pagination={"limit": 0}).date_deployment()
     query_result = endpoint(op)
     return (query_result, op)
 
-def query_alternative_for_copy_files_to_standard_directory(serial_number,
-                                                           date_for_filter):
+def query_alternative_for_move_files_to_standard_directory(serial_number,
+                                                           date_for_filter,
+                                                           file_type):
     """
     Execute in GQL of Zendro:
     query {
@@ -163,26 +176,34 @@ def query_alternative_for_copy_files_to_standard_directory(serial_number,
                                                  operator: eq})
                                                  {
                                                   node {
-                                                    nomenclatura
-                                                  }
+                                                      nomenclatura
+                                                      cat_integr
+                                                      ecosystems{
+                                                          name
+                                                                }
+                                                       }
                                                   cumulus {
-                                                    name
-                                                  }
+                                                      name
+                                                       }
                                                   date_deployment
-                                                 }
+                                                  latitude
+                                                  longitude
+                                                  }
                        }
     }
     """
     endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
-    op.physical_devices(pagination={"limit": 0},
-                        search={"field": "serial_number",
-                                "value": serial_number,
-                                "operator": "like"})
+    auxiliar_func_for_query_move_using_file_type(op, serial_number, file_type)
     op.physical_devices.device_deployments_filter(pagination={"limit": 0},
                                                   search={"field": "date_deployment",
                                                           "value": date_for_filter,
                                                           "operator": "eq"})
     op.physical_devices.device_deployments_filter.node.nomenclatura() #after this line op has type sgqlc selection
+    op.physical_devices.device_deployments_filter.node.cat_integr()
+    op.physical_devices.device_deployments_filter.node.ecosystems.name()
     op.physical_devices.device_deployments_filter.cumulus.name()
+    op.physical_devices.device_deployments_filter.date_deployment()
+    op.physical_devices.device_deployments_filter.latitude()
+    op.physical_devices.device_deployments_filter.longitude()
     query_result = endpoint(op)
     return (query_result, op)
