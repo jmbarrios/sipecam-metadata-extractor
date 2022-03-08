@@ -16,7 +16,7 @@ ID_REGEX       = re.compile(r'AudioMoth ([0-9A-Z]{16})')
 DATE_REGEX     = re.compile(r'((\d{2}:\d{2}:\d{2}) (\d{2}\/\d{2}\/\d{4}) \((UTC((-|\+)(\d+))?)\))')
 GAIN_REGEX     = re.compile(r'gain setting (\d)')
 GAIN_REGEX_ALT = re.compile(r'at (\w*) gain')
-BATTERY_REGEX  = re.compile(r'battery state was (\d.\dV)')
+BATTERY_REGEX  = re.compile(r'(\d.\dV)')
 ONLY_DATE_REGEX = re.compile(r'(\d{2}\/\d{2}\/\d{4})')
 ONLY_TIME_REGEX = re.compile(r'(\d{2}:\d{2}:\d{2})')
 
