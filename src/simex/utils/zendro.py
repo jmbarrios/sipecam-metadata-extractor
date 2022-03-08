@@ -51,19 +51,20 @@ def get_sgqlc_endpoint_and_operation_for_query():
 def auxiliar_func_for_query_move_using_file_type(op,
                                                  serial_number,
                                                  file_type):
+    """
+    Make query using serial number of device. Helper for move_files_to_standard_directory
+    """
     dict_for_physical_devices = {"field": "",
                                  "value": serial_number,
                                  "operator": "like"}
     if file_type == "image" or file_type == "video":
         dict_for_physical_devices["field"] = "serial_number"
-        op.physical_devices(pagination={"limit": 0},
-                            search=dict_for_physical_devices)
     else:
         if file_type == "audio":
             dict_for_physical_devices["field"] = "comments"
             dict_for_physical_devices["value"] = "ADM" + dict_for_physical_devices["value"]
-            op.physical_devices(pagination={"limit": 0},
-                                search=dict_for_physical_devices)
+    op.physical_devices(pagination={"limit": 0},
+                        search=dict_for_physical_devices)
 
 
 def query_for_move_files_to_standard_directory(serial_number,
