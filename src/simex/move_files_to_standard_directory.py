@@ -8,9 +8,9 @@ import hashlib
 import re
 
 from simex import get_logger_for_writing_logs_to_file
-from simex.utils.zendro import query_for_copy_files_to_standard_directory, \
-query_alternative_auxiliar_for_copy_files_to_standard_directory, \
-query_alternative_for_copy_files_to_standard_directory
+from simex.utils.zendro import query_for_move_files_to_standard_directory, \
+query_alternative_auxiliar_for_move_files_to_standard_directory, \
+query_alternative_for_move_files_to_standard_directory
 from simex.utils.directories_and_files import multiple_file_types
 from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO, \
 SUFFIXES_SIPECAM
@@ -33,7 +33,7 @@ def arguments_parse():
     help = """
 Move files to directory of server. Path that will have the files is created
 according to:
-cumulus_name/node_nomenclature/category integrity of node/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
+cumulus_name/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JPG|WAV|AVI)
 
 --------------
 Example usage:
@@ -98,11 +98,19 @@ def main():
     def modify_json_metadata_of_device(d_source,
                                        nom_node,
                                        cumulus_name,
-                                       date_deploy):
-        dict_output_metadatadevice                     = d_source["MetadataDevice"].copy()
-        dict_output_metadatadevice["NomenclatureNode"] = nom_node
-        dict_output_metadatadevice["CumulusName"]      = cumulus_name
-        dict_output_metadatadevice["DateDeployment"]   = date_deploy
+                                       date_deploy,
+                                       ecosystems_name,
+                                       latitude_device,
+                                       longitude_device,
+                                       node_cat_integrity):
+        dict_output_metadatadevice                          = d_source["MetadataDevice"].copy()
+        dict_output_metadatadevice["NomenclatureNode"]      = nom_node
+        dict_output_metadatadevice["CumulusName"]           = cumulus_name
+        dict_output_metadatadevice["DateDeployment"]        = date_deploy
+        dict_output_metadatadevice["EcosystemsName"]        = ecosystems_name
+        dict_output_metadatadevice["Latitude"]              = latitude_device
+        dict_output_metadatadevice["Longitude"]             = longitude_device
+        dict_output_metadatadevice["NodeCategoryIntegrity"] = node_cat_integrity
         return dict_output_metadatadevice
 
     def move_files_to_standard_dir_and_modify_json_metadata(src_dir,
@@ -113,14 +121,15 @@ def main():
 
         if type_files_in_dir == "audios":
             dir_pathlib = pathlib.Path(src_dir)
-            dict_output_metadata_audios_files  = {}
-            dict_output_metadata_audios_files["MetadataDevice"] = d_output_metadatadevice
+            dict_output_metadata_audios  = {}
+            dict_output_metadata_audios["DaysBetweenFirstAndLastDate"] = d_source["DaysBetweenFirstAndLastDate"]
+            dict_output_metadata_audios["MetadataDevice"]              = d_output_metadatadevice
             filename_key = next(iter(d_source["MetadataFiles"]))
-            samplerate = d_source["MetadataFiles"][filename_key]["SampleRate"]
-            if samplerate == 384000:
+            sample_rate = d_source["MetadataFiles"][filename_key]["SampleRate"]
+            if sample_rate == 384000:
                 type_audio = "Ultrasonico"
             else:
-                if samplerate == 48000:
+                if sample_rate == 48000:
                     type_audio = "Audible"
                 else:
                     type_audio = "Audible_Ultrasonico"
@@ -134,11 +143,12 @@ def main():
                                                              standard_dir_audios_pathlib.name + \
                                                              "_simex_metadata_files_and_device.json")
             write_dst_audios = open(file_with_metadata_updated_audios, "w+")
-            dict_output_metadata_audios_files["MetadataFiles"] = {}
+            dict_output_metadata_audios["MetadataFiles"] = {}
         else:
             if type_files_in_dir == "images" or "videos":
-                dict_output_metadata_images_videos_files  = {}
-                dict_output_metadata_images_videos_files["MetadataDevice"] = d_output_metadatadevice
+                dict_output_metadata_images_videos  = {}
+                dict_output_metadata_images_videos["DaysBetweenFirstAndLastDate"] = d_source["DaysBetweenFirstAndLastDate"]
+                dict_output_metadata_images_videos["MetadataDevice"] = d_output_metadatadevice
                 standard_dir_images_videos = os.path.join(dst_dir,
                                                           "images_videos")
                 standard_dir_images_videos_pathlib = pathlib.Path(standard_dir_images_videos)
@@ -147,7 +157,7 @@ def main():
                                                                         standard_dir_images_videos_pathlib.name + \
                                                                         "_simex_metadata_files_and_device.json")
                 write_dst_images_videos = open(file_with_metadata_updated_images_videos, "w+")
-                dict_output_metadata_images_videos_files["MetadataFiles"] = {}
+                dict_output_metadata_images_videos["MetadataFiles"] = {}
 
         iterator = multiple_file_types(src_dir,
                                        SUFFIXES_SIPECAM)
@@ -163,7 +173,7 @@ def main():
                            )
                 dst_filename = os.path.join(standard_dir_audios, filename_std)
                 f_pathlib.rename(dst_filename) #move
-                dict_output_metadata_audios_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+                dict_output_metadata_audios["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
 
             else:
                 if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
@@ -177,34 +187,34 @@ def main():
                                )
                     dst_filename = os.path.join(standard_dir_images_videos, filename_std)
                     f_pathlib.rename(dst_filename)
-                    dict_output_metadata_images_videos_files["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+                    dict_output_metadata_images_videos["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
 
         if type_files_in_dir == "audios":
-            json.dump(dict_output_metadata_audios_files, write_dst_audios)
+            json.dump(dict_output_metadata_audios, write_dst_audios)
             write_dst_audios.close()
         else:
             if type_files_in_dir == "images" or "videos":
-                json.dump(dict_output_metadata_images_videos_files, write_dst_images_videos)
+                json.dump(dict_output_metadata_images_videos, write_dst_images_videos)
                 write_dst_images_videos.close()
 
     #make query assuming first_date_str is less than date of deployment of device
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
         type_files_in_dir = "audios"
-        query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+        query_result, operation_sgqlc = query_for_move_files_to_standard_directory(serial_number,
                                                                                    first_date_str,
                                                                                    second_date_str,
                                                                                    file_type="audio")
     else:
         if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
             type_files_in_dir = "images"
-            query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+            query_result, operation_sgqlc = query_for_move_files_to_standard_directory(serial_number,
                                                                                        first_date_str,
                                                                                        second_date_str,
                                                                                        file_type="image")
         else:
             if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                 type_files_in_dir = "videos"
-                query_result, operation_sgqlc = query_for_copy_files_to_standard_directory(serial_number,
+                query_result, operation_sgqlc = query_for_move_files_to_standard_directory(serial_number,
                                                                                            first_date_str,
                                                                                            second_date_str,
                                                                                            file_type="video")
@@ -215,20 +225,34 @@ def main():
         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
         if len(device_deploymentsFilter_list) == 1:
             device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
-            nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
-            cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
-            date_of_deployment = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
+            nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
+            cumulus_name          = device_deploymentsFilter_dict["cumulus"]["name"]
+            date_of_deployment    = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
+            ecosystems_name       = device_deploymentsFilter_dict["node"]["ecosystems"]["name"]
+            latitude_device       = device_deploymentsFilter_dict["latitude"]
+            longitude_device      = device_deploymentsFilter_dict["longitude"]
+            node_cat_integrity    = device_deploymentsFilter_dict["node"]["cat_integr"]
             logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
-            logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
-                                                                                           nomenclature_node,
-                                                                                           cumulus_name,
-                                                                                           date_of_deployment)
+            logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s, ecosystems name: %s, \
+                         latitude and longitude of device:  %s, %s, node category of integrity: %s" % \
+                        (directory_with_file_of_serial_number_and_dates,
+                         nomenclature_node,
+                         cumulus_name,
+                         date_of_deployment,
+                         ecosystems_name,
+                         latitude_device,
+                         longitude_device,
+                         node_cat_integrity)
                        )
             logger.info("modifying dict MetadataDevice")
             dict_output_metadatadevice = modify_json_metadata_of_device(dict_source,
                                                                         nomenclature_node,
                                                                         cumulus_name,
-                                                                        date_of_deployment)
+                                                                        date_of_deployment,
+                                                                        ecosystems_name,
+                                                                        latitude_device,
+                                                                        longitude_device,
+                                                                        node_cat_integrity)
             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                   cumulus_name,
                                                   nomenclature_node,
@@ -246,7 +270,17 @@ def main():
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
                 logger.info("last query wasn't successful")
-                query_result, operation_sgqlc = query_alternative_auxiliar_for_copy_files_to_standard_directory(serial_number)
+                if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+                    query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
+                                                                                                                    file_type="audio")
+                else:
+                    if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                        query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
+                                                                                                                        file_type="image")
+                    else:
+                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                            query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
+                                                                                                                            file_type="video")
                 logger.info("Query alternative auxiliar to Zendro GQL: %s" % operation_sgqlc)
                 try:
                     device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
@@ -264,27 +298,53 @@ def main():
                             idx_date = k
                         k += 1
                     date_for_filter = device_deploymentsFilter_list[idx_date]["date_deployment"]
-                    query_result, operation_sgqlc = query_alternative_for_copy_files_to_standard_directory(serial_number,
-                                                                                                           date_for_filter)
+                    if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+                        query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
+                                                                                                               date_for_filter,
+                                                                                                               file_type="audio")
+                    else:
+                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                            query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
+                                                                                                                    date_for_filter,
+                                                                                                                    file_type="image")
+                        else:
+                            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                                query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
+                                                                                                                       date_for_filter,
+                                                                                                                       file_type="video")
                     logger.info("Query alternative to Zendro GQL: %s" % operation_sgqlc)
                     try:
                         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
                         if len(device_deploymentsFilter_list) == 1:
                             device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
-                            nomenclature_node  = device_deploymentsFilter_dict["node"]["nomenclatura"]
-                            cumulus_name       = device_deploymentsFilter_dict["cumulus"]["name"]
-                            date_of_deployment = list_dates_device_deployment[idx_date]
+                            nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
+                            cumulus_name          = device_deploymentsFilter_dict["cumulus"]["name"]
+                            date_of_deployment    = list_dates_device_deployment[idx_date]
+                            ecosystems_name       = device_deploymentsFilter_dict["node"]["ecosystems"]["name"]
+                            latitude_device       = device_deploymentsFilter_dict["latitude"]
+                            longitude_device      = device_deploymentsFilter_dict["longitude"]
+                            node_cat_integrity    = device_deploymentsFilter_dict["node"]["cat_integr"]
                             logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
-                            logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s" % (directory_with_file_of_serial_number_and_dates,
-                                                                                                           nomenclature_node,
-                                                                                                           cumulus_name,
-                                                                                                           date_of_deployment)
-                                        )
+                            logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s, ecosystems name: %s, \
+                                         latitude and longitude of device:  %s, %s, node category of integrity: %s" % \
+                                        (directory_with_file_of_serial_number_and_dates,
+                                         nomenclature_node,
+                                         cumulus_name,
+                                         date_of_deployment,
+                                         ecosystems_name,
+                                         latitude_device,
+                                         longitude_device,
+                                         node_cat_integrity)
+                                       )
                             logger.info("modifying dict MetadataDevice")
                             dict_output_metadatadevice = modify_json_metadata_of_device(dict_source,
                                                                                         nomenclature_node,
                                                                                         cumulus_name,
-                                                                                        date_of_deployment)
+                                                                                        date_of_deployment,
+                                                                                        ecosystems_name,
+                                                                                        latitude_device,
+                                                                                        longitude_device,
+                                                                                        node_cat_integrity)
                             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                                   cumulus_name,
                                                                   nomenclature_node,
