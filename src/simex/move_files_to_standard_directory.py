@@ -85,6 +85,22 @@ def md5_for_file(path, block_size=256*128):
              md5.update(chunk)
     return md5.hexdigest()
 
+def get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list):
+    device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
+    nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
+    cumulus_name          = device_deploymentsFilter_dict["cumulus"]["name"]
+    date_of_deployment    = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
+    ecosystems_name       = device_deploymentsFilter_dict["node"]["ecosystems"]["name"]
+    latitude_device       = device_deploymentsFilter_dict["latitude"]
+    longitude_device      = device_deploymentsFilter_dict["longitude"]
+    node_cat_integrity    = device_deploymentsFilter_dict["node"]["cat_integr"]
+    return (nomenclature_node,
+            cumulus_name,
+            date_of_deployment,
+            ecosystems_name,
+            latitude_device,
+            longitude_device,
+            node_cat_integrity)
 def arguments_parse():
     help = """
 Move files to directory of server. Path that will have the files is created
@@ -219,14 +235,8 @@ def main():
     try:
         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
         if len(device_deploymentsFilter_list) == 1:
-            device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
-            nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
-            cumulus_name          = device_deploymentsFilter_dict["cumulus"]["name"]
-            date_of_deployment    = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
-            ecosystems_name       = device_deploymentsFilter_dict["node"]["ecosystems"]["name"]
-            latitude_device       = device_deploymentsFilter_dict["latitude"]
-            longitude_device      = device_deploymentsFilter_dict["longitude"]
-            node_cat_integrity    = device_deploymentsFilter_dict["node"]["cat_integr"]
+            tuple_result = get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list)
+            nomenclature_node, cumulus_name, date_of_deployment, ecosystems_name, latitude_device, longitude_device, node_cat_integrity = tuple_result
             logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
             logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s, ecosystems name: %s, \
                          latitude and longitude of device:  %s, %s, node category of integrity: %s" % \
@@ -311,14 +321,8 @@ def main():
                     try:
                         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
                         if len(device_deploymentsFilter_list) == 1:
-                            device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
-                            nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
-                            cumulus_name          = device_deploymentsFilter_dict["cumulus"]["name"]
-                            date_of_deployment    = list_dates_device_deployment[idx_date]
-                            ecosystems_name       = device_deploymentsFilter_dict["node"]["ecosystems"]["name"]
-                            latitude_device       = device_deploymentsFilter_dict["latitude"]
-                            longitude_device      = device_deploymentsFilter_dict["longitude"]
-                            node_cat_integrity    = device_deploymentsFilter_dict["node"]["cat_integr"]
+                            tuple_result = get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list)
+                            nomenclature_node, cumulus_name, date_of_deployment, ecosystems_name, latitude_device, longitude_device, node_cat_integrity = tuple_result
                             logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
                             logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s, ecosystems name: %s, \
                                          latitude and longitude of device:  %s, %s, node category of integrity: %s" % \
