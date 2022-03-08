@@ -113,11 +113,11 @@ def main():
         dict_output_metadatadevice["NodeCategoryIntegrity"] = node_cat_integrity
         return dict_output_metadatadevice
 
-    def move_files_to_standard_dir_and_modify_json_metadata(src_dir,
-                                                            dst_dir,
-                                                            d_source,
-                                                            d_output_metadatadevice,
-                                                            type_files_in_dir):
+    def move_files_to_standard_dir_and_create_output_dict(src_dir,
+                                                          dst_dir,
+                                                          d_source,
+                                                          d_output_metadatadevice,
+                                                          type_files_in_dir):
 
         if type_files_in_dir == "audios":
             dir_pathlib = pathlib.Path(src_dir)
@@ -259,11 +259,11 @@ def main():
                                                   serial_number,
                                                   date_of_deployment)
             logger.info("path where files will be moved: %s" % path_with_files_copied)
-            move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
-                                                                path_with_files_copied,
-                                                                dict_source,
-                                                                dict_output_metadatadevice,
-                                                                type_files_in_dir)
+            move_files_to_standard_dir_and_create_output_dict(directory_with_file_of_serial_number_and_dates,
+                                                              path_with_files_copied,
+                                                              dict_source,
+                                                              dict_output_metadatadevice,
+                                                              type_files_in_dir)
 
             #write new dict for metadata device and files
 
@@ -351,11 +351,11 @@ def main():
                                                                   serial_number,
                                                                   date_of_deployment)
                             logger.info("path where files will be moved: %s" % path_with_files_copied)
-                            move_files_to_standard_dir_and_modify_json_metadata(directory_with_file_of_serial_number_and_dates,
-                                                                                path_with_files_copied,
-                                                                                dict_source,
-                                                                                dict_output_metadatadevice,
-                                                                                type_files_in_dir)
+                            move_files_to_standard_dir_and_create_output_dict(directory_with_file_of_serial_number_and_dates,
+                                                                              path_with_files_copied,
+                                                                              dict_source,
+                                                                              dict_output_metadatadevice,
+                                                                              type_files_in_dir)
                     except Exception as e:
                         logger.info(e)
                         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
