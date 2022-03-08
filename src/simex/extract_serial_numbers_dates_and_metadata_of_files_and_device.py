@@ -171,6 +171,12 @@ def main():
                     d_output["Dates"][filename] = date_file
                     metadata_file = tuple_metadata_of_file[1] #tuple with filename and metadata as 1st and 2nd elements resp
                     d_output["MetadataFiles"][filename] = metadata_file
+                    f_pathlib = pathlib.Path(filename)
+                    if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                        d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
+                        d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
+                        d_output["MetadataFiles"][filename]["GPSLatitude"]     = d_gps_for_videos["GPSLatitude"]
+                        d_output["MetadataFiles"][filename]["GPSLongitude"]    = d_gps_for_videos["GPSLongitude"]
 
         if len(d_output["Dates"].keys()) < 1:
             logger.info("there were no dates to extract")
