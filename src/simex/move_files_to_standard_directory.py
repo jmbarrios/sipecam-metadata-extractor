@@ -159,7 +159,7 @@ def main():
 
             else:
                 if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
-                    filename_number = re.findall("[0-9]{1,}", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+                    filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
                     filename_std = "".join([filename_md5,
                                             "_",
                                             filename_number,
