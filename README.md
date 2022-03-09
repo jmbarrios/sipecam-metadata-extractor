@@ -49,19 +49,19 @@ head -n 10 /root/sipecam-metadata-extractor/src/simex/sipecam_zendro_schema.py
 
 ```
 
-# extract_serial_numbers_datetimes_of_files
+# extract_serial_numbers_dates_and_metadata_of_files_and_device
 
 ```
 dir_to_be_processed="/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/Playon 1338/Camaras/1338_1/100RECNX/"
 #default for parallel execution are 4 processes
-docker run --rm -v /LUSTRE:/LUSTRE $REPO_URL:$SIMEX_VERSION extract_serial_numbers_datetimes_of_files --input_dir "$dir_to_be_processed" --parallel
+docker run --rm -v /LUSTRE:/LUSTRE $REPO_URL:$SIMEX_VERSION extract_serial_numbers_dates_and_metadata_of_files_and_device --input_dir "$dir_to_be_processed" --parallel
 ```
 
 ## check
 
 ```
 dir_to_be_processed="/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/Playon 1338/Camaras/1338_1/100RECNX/"
-file_for_logs=$(find "$dir_to_be_processed" -name "logs_simex_extract_serial_numbers_datetimes.logs")
+file_for_logs=$(find "$dir_to_be_processed" -name "logs_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.logs")
 head -n 15 "$file_for_logs"
 
 file_json=$(find "$dir_to_be_processed" -name "*.json")
