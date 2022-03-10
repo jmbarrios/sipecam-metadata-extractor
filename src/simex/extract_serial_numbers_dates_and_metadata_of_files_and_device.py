@@ -113,8 +113,6 @@ def main():
                     logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
                     not_success = False
                     d_output["MetadataDevice"] = res_extract_metadata_of_device
-                if len(d_output["MetadataDevice"].keys()) < 1:
-                    logger.info("FAILED extraction of serial number of files in dir %s" % input_dir)
             except Exception as e:
                 logger.info(e)
                 logger.info("there were no audios nor images found in dir: %s, serial number can not be retrieved from " % input_dir)
