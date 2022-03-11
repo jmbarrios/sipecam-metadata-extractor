@@ -10,7 +10,11 @@ from simex.utils.directories_and_files import multiple_file_types
 
 def check_audio_file(filename):
     """
-    Helper function to check if audio file is empty.
+    Helper function to check if audio file when reading it with exiftool
+    either one of next sentences are in the metadata:
+    "Error": "Entire file is binary zeros"
+    Recording cancelled before completion due to change of switch position.
+    "Error": "File is empty"
     Is outside main to execute it in parallel.
     """
     f_pathlib = pathlib.Path(filename)
@@ -20,7 +24,8 @@ def check_audio_file(filename):
                                  capture_output=True)
     run_out_cmd_stdout_empty = run_out_cmd.stdout.find(b"empty")
     run_out_cmd_stdout_cancelled = run_out_cmd.stdout.find(b"cancelled")
-    if run_out_cmd_stdout_empty != -1 or run_out_cmd_stdout_cancelled != -1:
+    run_out_cmd_stdout_binary_zeros = run_out_cmd.stdout.find(b"binary zeros")
+    if run_out_cmd_stdout_empty != -1 or run_out_cmd_stdout_cancelled != -1 or run_out_cmd_stdout_binary_zeros != -1:
         dir_pathlib = f_pathlib.parent
         dir_error = os.path.join(dir_pathlib,
                                  "error")
