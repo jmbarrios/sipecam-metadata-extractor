@@ -19,7 +19,8 @@ def check_audio_file(filename):
                                  shell=True,
                                  capture_output=True)
     run_out_cmd_stdout_empty = run_out_cmd.stdout.find(b"empty")
-    if run_out_cmd_stdout_empty != -1:
+    run_out_cmd_stdout_cancelled = run_out_cmd.stdout.find(b"cancelled")
+    if run_out_cmd_stdout_empty != -1 or run_out_cmd_stdout_cancelled != -1:
         dir_pathlib = f_pathlib.parent
         dir_error = os.path.join(dir_pathlib,
                                  "error")
