@@ -15,6 +15,8 @@ from simex.utils.directories_and_files import multiple_file_types
 from simex import SUFFIXES_SIPECAM_AUDIO, SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO, \
 SUFFIXES_SIPECAM
 
+SUFFIXES_SIPECAM_IMAGES_VIDEO = SUFFIXES_SIPECAM_IMAGES + SUFFIXES_SIPECAM_VIDEO
+
 def modify_json_metadata_of_device(d_source,
                                    nom_node,
                                    cumulus_name,
@@ -55,7 +57,7 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
                                     type_audio
                                     )
     else:
-        if type_files_in_dir == "images" or "videos":
+        if type_files_in_dir == "images" or type_files_in_dir == "videos":
             standard_dir = os.path.join(dst_dir,
                                         "images_videos")
 
@@ -173,7 +175,7 @@ def main():
                                                                            filename_std)
                            )
             else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
                     filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
                     filename_std = "".join([filename_md5,
                                             "_",
@@ -184,7 +186,7 @@ def main():
                                )
             dst_filename = os.path.join(standard_dir, filename_std)
             dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
                 check_gps_metadata_of_images_and_videos(dict_output_metadata["MetadataFiles"][dst_filename],
                                                         d_output_metadatadevice)
             #call function to complete metadatafiles for lat, long audio case
