@@ -121,6 +121,8 @@ def main():
         f_pathlib = pathlib.Path(filename)
         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
             d_output["GPSFile"] = read_metadata_image.extract_gps(filename)
+        if not d_output["GPSFile"]["GPSLatitudeRef"]: #check if extraction of GPS information was successful
+            logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
 
     def extract_metadata_of_files(input_dir,
                                   d_output,
@@ -146,8 +148,10 @@ def main():
                         d_output["Dates"][filename] = date_file
                         filename, metadata_file = t[1] #t[1] tuple with filename and metadata as 1st, 2nd elements resp
                         d_output["MetadataFiles"][filename] = metadata_file
-                        #as videos have no coordinates variable d_gps_for_videos will be used to assign them
                         f_pathlib = pathlib.Path(filename)
+                        if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and not metadata_file["GPSLatitudeRef"]:
+                            logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
+                        #as videos have no coordinates variable d_gps_for_videos will be used to assign them
                         if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                             d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
                             d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
@@ -167,6 +171,8 @@ def main():
                     metadata_file = tuple_metadata_of_file[1] #tuple with filename and metadata as 1st and 2nd elements resp
                     d_output["MetadataFiles"][filename] = metadata_file
                     f_pathlib = pathlib.Path(filename)
+                    if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and not metadata_file["GPSLatitudeRef"]:
+                        logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
                     if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                         d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
                         d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
