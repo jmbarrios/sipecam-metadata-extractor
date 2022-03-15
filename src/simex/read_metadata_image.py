@@ -21,8 +21,6 @@ TAGS_1_FOR_FILE = {"EXIF:Make"                     : "Make"                   ,
                    "EXIF:TimeZoneOffset"           : "TimeZoneOffset"         ,
                    "EXIF:ComponentsConfiguration"  : "ComponentsConfiguration",
                    "EXIF:ColorSpace"               : "ColorSpace"             ,
-                   "EXIF:GPSLatitudeRef"           : "GPSLatitudeRef"         ,
-                   "EXIF:GPSLongitudeRef"          : "GPSLongitudeRef"        ,
                    "MakerNotes:AmbientTemperature" : "AmbientTemperature"     ,
                    "MakerNotes:Contrast"           : "Contrast"               ,
                    "MakerNotes:Brightness"         : "Brightness"             ,
@@ -36,9 +34,7 @@ TAGS_1_FOR_FILE = {"EXIF:Make"                     : "Make"                   ,
                    "MakerNotes:BatteryVoltageAvg"  : "BatteryVoltageAvg"      ,
                   }
 
-TAGS_2_FOR_FILE = {"Composite:GPSLatitude"  : "GPSLatitude" ,
-                   "Composite:GPSLongitude" : "GPSLongitude",
-                   "Composite:Megapixels"   : "Megapixels"
+TAGS_2_FOR_FILE = {"Composite:Megapixels"   : "Megapixels"
                   }
 
 
@@ -47,9 +43,13 @@ TAGS_FOR_DEVICE = {"EXIF:Make"               : "Make"        ,
                    "MakerNotes:SerialNumber" : "SerialNumber"
                   }
 
-TAGS_FOR_GPS = {"Composite:GPSLatitude"  : "GPSLatitude",
-                "Composite:GPSLongitude" : "GPSLongitude"
-               }
+TAGS_FOR_GPS_COMPOSITE = {"Composite:GPSLatitude"  : "GPSLatitude",
+                          "Composite:GPSLongitude" : "GPSLongitude"
+                          }
+
+TAGS_FOR_GPS_EXIF = {"EXIF:GPSLatitudeRef" : "GPSLatitudeRef" ,
+                     "EXIF:GPSLongitudeRef": "GPSLongitudeRef"
+                    }
 
 def get_metadata_of_device(filename):
     with exiftool.ExifTool() as et:
@@ -62,13 +62,26 @@ def get_metadata_of_device(filename):
 def get_metadata_of_file(filename):
     with exiftool.ExifTool(common_args=["-G"]) as et:
         exiftool_metadata_1 = et.get_tags(TAGS_1_FOR_FILE.keys(), filename)
+        exiftool_metadata_gps_exif = et.get_tags(TAGS_FOR_GPS_EXIF.keys(), filename)
     with exiftool.ExifTool() as et:
         exiftool_metadata_2 = et.get_tags(TAGS_2_FOR_FILE.keys(), filename)
+        exiftool_metadata_gps_composite = et.get_tags(TAGS_FOR_GPS_COMPOSITE.keys(), filename)
+
     dict_metadata_of_file = {}
     for k,v in TAGS_1_FOR_FILE.items():
         dict_metadata_of_file[v] = exiftool_metadata_1[k]
     for k,v in TAGS_2_FOR_FILE.items():
         dict_metadata_of_file[v] = exiftool_metadata_2[k]
+    for k,v in TAGS_FOR_GPS_EXIF.items():
+        try:
+            dict_metadata_of_file[v] = exiftool_metadata_gps_exif[k]
+        except Exception as e:
+            dict_metadata_of_file[v] = ""
+    for k,v in TAGS_FOR_GPS_COMPOSITE.items():
+        try:
+            dict_metadata_of_file[v] = exiftool_metadata_gps_composite[k]
+        except Exception as e:
+            dict_metadata_of_file[v] = ""
     return dict_metadata_of_file
 
 def extract_date(filename):
@@ -82,12 +95,19 @@ def extract_serial_number(filename):
         return et.get_tag("SerialNumber", filename)
 
 def extract_gps(filename):
+    gps_metadata = {}
     with exiftool.ExifTool(common_args=["-G"]) as et:
-        gps_metadata = {"GPSLatitudeRef" : et.get_tag("GPSLatitudeRef", filename),
-                        "GPSLongitudeRef": et.get_tag("GPSLongitudeRef", filename)
-                       }
+        exiftool_metadata_gps_exif = et.get_tags(TAGS_FOR_GPS_EXIF.keys(), filename)
     with exiftool.ExifTool() as et:
-        exiftool_metadata  = et.get_tags(TAGS_FOR_GPS.keys(), filename)
-    for k,v in TAGS_FOR_GPS.items():
-        gps_metadata[v] = exiftool_metadata[k]
+        exiftool_metadata_gps_composite = et.get_tags(TAGS_FOR_GPS_COMPOSITE.keys(), filename)
+    for k,v in TAGS_FOR_GPS_EXIF.items():
+        try:
+            gps_metadata[v] = exiftool_metadata_gps_exif[k]
+        except Exception as e:
+            gps_metadata[v] = ""
+    for k,v in TAGS_FOR_GPS_COMPOSITE.items():
+        try:
+            gps_metadata[v] = exiftool_metadata_gps_composite[k]
+        except Exception as e:
+            gps_metadata[v] = ""
     return gps_metadata
