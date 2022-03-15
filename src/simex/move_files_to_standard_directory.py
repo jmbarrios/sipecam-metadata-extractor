@@ -63,7 +63,9 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
     os.makedirs(standard_dir, exist_ok=True)
     file_with_metadata_updated = os.path.join(standard_dir,
                                               standard_dir_pathlib.name + \
-                                              "_simex_metadata_files_and_device.json")
+                                              "_simex_metadata_files_and_device_" + \
+                                              datetime.date.today().strftime("%d-%m-%Y") + \
+                                              ".json")
     write_dst = open(file_with_metadata_updated, "w+")
     dict_output_metadata["MetadataFiles"] = {}
 
@@ -101,6 +103,23 @@ def get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list):
             latitude_device,
             longitude_device,
             node_cat_integrity)
+
+def get_latref_long_ref(latitude, longitude):
+    return {"GPSLatitudeRef": "North" if latitude >= 0 else "South",
+            "GPSLongitudeRef": "East" if longitude >= 0 else "West"
+            }
+
+def check_gps_metadata_of_images_and_videos(d_metadatafiles_for_file,
+                                            d_output_metadatadevice):
+    if not d_metadatafiles_for_file["GPSLatitudeRef"]:
+        lat  = d_output_metadatadevice["Latitude"]
+        long = d_output_metadatadevice["Longitude"]
+        d_latlong_ref = get_latref_long_ref(lat, long)
+        d_metadatafiles_for_file["GPSLatitudeRef"]  = d_latlong_ref["GPSLatitudeRef"]
+        d_metadatafiles_for_file["GPSLongitudeRef"] = d_latlong_ref["GPSLongitudeRef"]
+        d_metadatafiles_for_file["GPSLatitude"]     = lat
+        d_metadatafiles_for_file["GPSLongitude"]    = long
+
 def arguments_parse():
     help = """
 Move files to directory of server. Path that will have the files is created
@@ -153,10 +172,6 @@ def main():
                 logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
                                                                            filename_std)
                            )
-                dst_filename = os.path.join(standard_dir, filename_std)
-                f_pathlib.rename(dst_filename) #move
-                dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-
             else:
                 if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
                     filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
@@ -167,9 +182,13 @@ def main():
                     logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
                                                                                filename_std)
                                )
-                    dst_filename = os.path.join(standard_dir, filename_std)
-                    f_pathlib.rename(dst_filename)
-                    dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+            dst_filename = os.path.join(standard_dir, filename_std)
+            dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or SUFFIXES_SIPECAM_VIDEO:
+                check_gps_metadata_of_images_and_videos(dict_output_metadata["MetadataFiles"][dst_filename],
+                                                        d_output_metadatadevice)
+            #call function to complete metadatafiles for lat, long audio case
+            f_pathlib.rename(dst_filename) #move
         json.dump(dict_output_metadata, write_dst)
         write_dst.close()
 
