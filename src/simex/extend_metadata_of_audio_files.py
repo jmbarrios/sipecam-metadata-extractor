@@ -58,17 +58,17 @@ def main():
                                                   ".json")
     logger.info("Json file that will be the source: %s" % file_with_audio_metadata_source)
 
-    #with open(file_with_audio_metadata_source, 'r') as f:
-    #    dict_source = json.load(f)
-    #lat  = dict_source["MetadataDevice"]["Latitude"]
-    #long = dict_source["MetadataDevice"]["Longitude"]
-    #for filename, metadata_file in dict_source["MetadataFiles"].items():
-    #    dict_source["MetadataFiles"][filename]["Latitude"]  = lat
-    #    dict_source["MetadataFiles"][filename]["Longitude"] = long
-    #file_with_audio_metadata_dst = os.path.join(input_directory,
-    #                                            input_directory_name) + \
-    #                                            "_simex_metadata_files_and_device_" + \
-    #                                            datetime.date.today().strftime(date_format) + \
-    #                                            ".json"
-    #with open(file_with_audio_metadata_dst, 'w') as dst:
-    #    json.dump(dict_source, dst)
+    with open(file_with_audio_metadata_source, 'r') as f:
+        dict_source = json.load(f)
+    lat  = dict_source["MetadataDevice"]["Latitude"]
+    long = dict_source["MetadataDevice"]["Longitude"]
+    for filename, metadata_file in dict_source["MetadataFiles"].items():
+        dict_source["MetadataFiles"][filename]["Latitude"]  = lat
+        dict_source["MetadataFiles"][filename]["Longitude"] = long
+    file_with_audio_metadata_dst = os.path.join(input_directory,
+                                                input_directory_name) + \
+                                                "_simex_metadata_files_and_device_" + \
+                                                datetime.date.today().strftime(date_format) + \
+                                                ".json"
+    with open(file_with_audio_metadata_dst, 'w') as dst:
+        json.dump(dict_source, dst)
