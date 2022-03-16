@@ -1,11 +1,4 @@
-import os
-import argparse
-import json
-import pathlib
-import datetime
-import shutil
-import hashlib
-import re
+import os import argparse import json import pathlib import datetime import shutil import hashlib import re
 
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.zendro import query_for_move_files_to_standard_directory, \
@@ -122,6 +115,13 @@ def check_gps_metadata_of_images_and_videos(d_metadatafiles_for_file,
         d_metadatafiles_for_file["GPSLatitude"]     = lat
         d_metadatafiles_for_file["GPSLongitude"]    = long
 
+def extend_metadata_of_audios(d_metadatafiles_for_file,
+                             d_output_metadatadevice):
+    lat  = d_output_metadatadevice["Latitude"]
+    long = d_output_metadatadevice["Longitude"]
+    d_metadatafiles_for_file["Latitude"] = lat
+    d_metadatafiles_for_file["Longitude"] = long
+
 def arguments_parse():
     help = """
 Move files to directory of server. Path that will have the files is created
@@ -189,7 +189,10 @@ def main():
             if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
                 check_gps_metadata_of_images_and_videos(dict_output_metadata["MetadataFiles"][dst_filename],
                                                         d_output_metadatadevice)
-            #call function to complete metadatafiles for lat, long audio case
+            else:
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                    extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
+                                              d_output_metadatadevice)
             f_pathlib.rename(dst_filename) #move
         json.dump(dict_output_metadata, write_dst)
         write_dst.close()
