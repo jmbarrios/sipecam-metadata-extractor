@@ -10,7 +10,7 @@ from simex.utils.directories_and_files import multiple_file_types
 
 def arguments_parse():
     help = """
-Traverse files in a directory to check if audio files are empty
+Traverse files in a directory to extend metadata of audio files
 
 --------------
 Example usage:
@@ -70,5 +70,6 @@ def main():
                                                 "_simex_metadata_files_and_device_" + \
                                                 datetime.date.today().strftime(date_format) + \
                                                 ".json"
+    pathlib.Path(file_with_audio_metadata_dst).unlink(missing_ok=True) #remove in case it exists
     with open(file_with_audio_metadata_dst, 'w') as dst:
         json.dump(dict_source, dst)
