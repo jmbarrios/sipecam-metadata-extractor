@@ -162,10 +162,16 @@ def main():
                     logger.info("Latitude and Longitude of file are in cumulus geometry")
                     lat_file  = t_lat_long_file[0]
                     long_file = t_lat_long_file[1]
+                    #check if lat long of device are None and use lat long of file to fill them
+                    if not dict_source["MetadataDevice"]["Latitude"] and not dict_source["MetadataDevice"]["Longitude"]:
+                        logger.info("Using lat long of file to fill lat long of device")
+                        dict_source["MetadataDevice"]["Latitude"]  = lat_file
+                        dict_source["MetadataDevice"]["Longitude"] = long_file       
                 else:
                     logger.info("Latitude and Longitude of file are not in cumulus geometry, returning None")
-                    lat_file  = None
-                    long_file = None
+                    #if lat long of file are None then use lat long of device.
+                    lat_file  = dict_source["MetadataDevice"]["Latitude"] 
+                    long_file = dict_source["MetadataDevice"]["Longitude"]
 
                 if type_files_in_dir == "images" or type_files_in_dir == "videos":
                     dict_source["MetadataFiles"][filename]["GPSLatitude"]  = lat_file
