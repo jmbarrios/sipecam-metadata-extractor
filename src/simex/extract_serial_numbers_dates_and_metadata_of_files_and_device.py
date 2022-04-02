@@ -208,7 +208,11 @@ def main():
             d2_datetime = datetime.datetime.strptime(d2_str,
                                                      format_string_data)
             diff_datetimes = d2_datetime - d1_datetime
-            d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes.days
+            diff_datetimes_days = diff_datetimes.days
+            #there are devices that were placed only 1 day, thereby diff_datetimes_days = 0
+            if diff_datetimes_days == 0:
+                diff_datetimes_days = 1
+            d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes_days
             del d_output["Dates"]
 
         d_output["Dates"] = order_dict_dates()

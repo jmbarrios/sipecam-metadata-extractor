@@ -83,7 +83,10 @@ def main():
     lat_device      = dict_source["MetadataDevice"]["Latitude"]
     long_device     = dict_source["MetadataDevice"]["Longitude"]
     diff_dates      = dict_source["DaysBetweenFirstAndLastDate"]
-
+    #there are devices that were placed only 1 day, thereby diff_dates = 0
+    if diff_dates == 0:
+        diff_dates = 1
+        dict_source["DaysBetweenFirstAndLastDate"] = diff_dates
     diff_dates_datetime = datetime.timedelta(diff_dates)
     format_string_data = "%Y-%m-%d"
     date_deployment_datetime = datetime.datetime.strptime(date_deployment,
