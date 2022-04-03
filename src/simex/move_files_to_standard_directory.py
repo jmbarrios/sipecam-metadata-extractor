@@ -1,11 +1,13 @@
-import os 
-import argparse 
-import json 
-import pathlib 
-import datetime 
-import shutil 
-import hashlib 
+import os
+import argparse
+import json
+import pathlib
+import datetime
+import shutil
+import hashlib
 import re
+
+from shapely.geometry import Point, Polygon
 
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.zendro import query_for_move_files_to_standard_directory, \
@@ -17,28 +19,63 @@ SUFFIXES_SIPECAM
 
 SUFFIXES_SIPECAM_IMAGES_VIDEO = SUFFIXES_SIPECAM_IMAGES + SUFFIXES_SIPECAM_VIDEO
 
-def modify_json_metadata_of_device(d_source,
-                                   nom_node,
-                                   cumulus_name,
-                                   date_deploy,
-                                   ecosystems_name,
-                                   latitude_device,
-                                   longitude_device,
-                                   node_cat_integrity):
-    dict_output_metadatadevice                          = d_source["MetadataDevice"].copy()
-    dict_output_metadatadevice["NomenclatureNode"]      = nom_node
-    dict_output_metadatadevice["CumulusName"]           = cumulus_name
-    dict_output_metadatadevice["DateDeployment"]        = date_deploy
-    dict_output_metadatadevice["EcosystemsName"]        = ecosystems_name
-    dict_output_metadatadevice["Latitude"]              = latitude_device
-    dict_output_metadatadevice["Longitude"]             = longitude_device
-    dict_output_metadatadevice["NodeCategoryIntegrity"] = node_cat_integrity
+def build_polygon_for_cumulus_geometry(cumulus_geom_coordinates):
+    """
+    Retrieve Polygon geometry using coordinates list of cumulus.
+    """
+    geom = []
+    for point in cumulus_geom_coordinates:
+        geom.append((point[1],point[0]))
+    poly = Polygon(geom)
+    return poly
+
+def check_if_point_is_in_cumulus_geom(lat,lng, poly):
+    """
+    Validate if point is in Polygon geometry of cumulus.
+    """
+    try:
+        point_to_check = Point(lat,lng)
+        if point_to_check.within(poly.buffer(0.2)):
+            return (lat, lng)
+        else:
+            return None
+    except:
+        return None
+
+def fill_metadata_of_device_with_query_results(d_source,
+                                               nom_node,
+                                               cumulus_name,
+                                               lat_centroid_cumulus,
+                                               long_centroid_cumulus,
+                                               date_deploy,
+                                               ecosystems_name,
+                                               latitude_device,
+                                               longitude_device,
+                                               node_cat_integrity):
+    """
+    Auxiliary function to fill MetadataDevice key of dictionary d_source with results of
+    query to tables of Zendro.
+    """
+    dict_output_metadatadevice                             = d_source["MetadataDevice"].copy()
+    dict_output_metadatadevice["NomenclatureNode"]         = nom_node
+    dict_output_metadatadevice["CumulusName"]              = cumulus_name
+    dict_output_metadatadevice["CentroidCumulusLatitude"]  = lat_centroid_cumulus
+    dict_output_metadatadevice["CentroidCumulusLongitude"] = long_centroid_cumulus
+    dict_output_metadatadevice["DateDeployment"]           = date_deploy
+    dict_output_metadatadevice["EcosystemsName"]           = ecosystems_name
+    dict_output_metadatadevice["Latitude"]                 = latitude_device
+    dict_output_metadatadevice["Longitude"]                = longitude_device
+    dict_output_metadatadevice["NodeCategoryIntegrity"]    = node_cat_integrity
     return dict_output_metadatadevice
 
 def get_output_dict_std_dir_and_json_file(dst_dir,
                                           d_source,
                                           d_output_metadatadevice,
                                           type_files_in_dir):
+    """
+    Returns dictionary that will be used to fill json file, which is also open here, and
+    standard directory where files will be moved.
+    """
     dict_output_metadata  = {}
     dict_output_metadata["DaysBetweenFirstAndLastDate"] = d_source["DaysBetweenFirstAndLastDate"]
     dict_output_metadata["MetadataDevice"]              = d_output_metadatadevice
@@ -89,10 +126,14 @@ def md5_for_file(path, block_size=256*128):
              md5.update(chunk)
     return md5.hexdigest()
 
-def get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list):
+def get_fields_from_device_deploymentsFilter_query_result(device_deploymentsFilter_list):
+    """
+    Auxiliary function to retrieve results of query to Zendro in variables.
+    """
     device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
     nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
     cumulus_name          = device_deploymentsFilter_dict["cumulus"]["name"]
+    cumulus_geometry      = device_deploymentsFilter_dict["cumulus"]["geometry"]
     date_of_deployment    = device_deploymentsFilter_dict["date_deployment"].split('T')[0]
     ecosystems_name       = device_deploymentsFilter_dict["node"]["ecosystems"]["name"]
     latitude_device       = device_deploymentsFilter_dict["latitude"]
@@ -100,6 +141,7 @@ def get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list):
     node_cat_integrity    = device_deploymentsFilter_dict["node"]["cat_integr"]
     return (nomenclature_node,
             cumulus_name,
+            cumulus_geometry,
             date_of_deployment,
             ecosystems_name,
             latitude_device,
@@ -107,13 +149,28 @@ def get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list):
             node_cat_integrity)
 
 def get_latref_long_ref(latitude, longitude):
-    return {"GPSLatitudeRef": "North" if latitude >= 0 else "South",
-            "GPSLongitudeRef": "East" if longitude >= 0 else "West"
-            }
+    """
+    Build dictionary with GPSLatitudeRef & GPSLongitudeRef
+    in case are missing for images & videos files.
+    """
+    try:
+        return {"GPSLatitudeRef": "North" if latitude >= 0 else "South",
+                "GPSLongitudeRef": "East" if longitude >= 0 else "West"
+                }
+    except:
+        return {"GPSLatitudeRef": "",
+                "GPSLongitudeRef": ""
+                }
 
-def check_gps_metadata_of_images_and_videos(d_metadatafiles_for_file,
-                                            d_output_metadatadevice):
+def assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
+                                                               d_metadatafiles_for_file,
+                                                               d_output_metadatadevice):
+    """
+    If there is no GPS information in files metadata then use device metadata extracted from
+    Zendro Deployment table to fill it.
+    """
     if not d_metadatafiles_for_file["GPSLatitudeRef"]:
+        logger.info("GPS info of files werent available, using the ones of device to fill them")
         lat  = d_output_metadatadevice["Latitude"]
         long = d_output_metadatadevice["Longitude"]
         d_latlong_ref = get_latref_long_ref(lat, long)
@@ -124,10 +181,52 @@ def check_gps_metadata_of_images_and_videos(d_metadatafiles_for_file,
 
 def extend_metadata_of_audios(d_metadatafiles_for_file,
                              d_output_metadatadevice):
+    """
+    Fill latitude, longitude for audio files with info of latitude, longitude of
+    device.
+    """
     lat  = d_output_metadatadevice["Latitude"]
     long = d_output_metadatadevice["Longitude"]
     d_metadatafiles_for_file["Latitude"] = lat
     d_metadatafiles_for_file["Longitude"] = long
+
+def check_files_coords_and_assign_them_to_device_if_necessary(logger,
+                                                              lat_file,
+                                                              long_file,
+                                                              cumulus_poly,
+                                                              d_metadatadevice,
+                                                              d_metadatafiles_for_file,
+                                                              type_files_in_dir
+                                                              ):
+    """
+    For a given file check if coordinates of it fall in cumulus polygon.
+    Also check coordinates of device, if don't fall in cumulus polygon then use the ones from the files.
+    """
+    t_lat_long_file = check_if_point_is_in_cumulus_geom(lat_file,
+                                                        long_file,
+                                                        cumulus_poly)
+    if t_lat_long_file:
+        logger.info("Latitude and Longitude of file are in cumulus geometry")
+        lat_file  = t_lat_long_file[0]
+        long_file = t_lat_long_file[1]
+        #check if lat long of device are None and use lat long of file to fill them
+        if not d_metadatadevice["Latitude"] and not d_metadatadevice["Longitude"]:
+            logger.info("Using lat long of file to fill lat long of device")
+            d_metadatadevice["Latitude"]  = lat_file
+            d_metadatadevice["Longitude"] = long_file
+    else:
+        logger.info("Latitude and Longitude of file are not in cumulus geometry, returning None")
+        logger.info("Using lat long of device to fill lat long of file")
+        #if lat long of file are None then use lat long of device.
+        lat_file  = d_metadatadevice["Latitude"]
+        long_file = d_metadatadevice["Longitude"]
+    if type_files_in_dir == "images" or type_files_in_dir == "videos":
+        d_metadatafiles_for_file["GPSLatitude"]  = lat_file
+        d_metadatafiles_for_file["GPSLongitude"] = long_file
+    else:
+        if type_files_in_dir == "audios":
+            d_metadatafiles_for_file["Latitude"]  = lat_file
+            d_metadatafiles_for_file["Longitude"] = long_file
 
 def arguments_parse():
     help = """
@@ -161,12 +260,25 @@ def main():
                                    dst_dir,
                                    d_source,
                                    d_output_metadatadevice,
+                                   cumulus_poly,
                                    type_files_in_dir):
+        """
+        Move files from source directory to destiny directory, both given in standard input from this cli (move_files).
+        dst_dir will hold standard directory. Prepends already built (cumulus name, nomenclature of node,
+        date of deployment for example). Specifications of standard dir are built (if audio then use Ultrasonico or
+        Audible names for instance) in this function.
+        d_source is a dictionary with info from extract cli simex (executed in a previous step before this cli).
+        d_output_metadatadevice is a dictionary with device metadata info which has info from extract cli
+        simex (executed in a previous step before this cli) and Zendro info extracted in this cli (move_files).
+        Will be used for filling d_source.
+        """
 
         dict_output_metadata, standard_dir, write_dst = get_output_dict_std_dir_and_json_file(dst_dir,
                                                                                               d_source,
                                                                                               d_output_metadatadevice,
                                                                                               type_files_in_dir)
+        lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
+        long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
         os.makedirs(standard_dir, exist_ok=True)
 
         iterator = multiple_file_types(src_dir,
@@ -192,14 +304,35 @@ def main():
                                                                                filename_std)
                                )
             dst_filename = os.path.join(standard_dir, filename_std)
+            #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
             dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
             if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                check_gps_metadata_of_images_and_videos(dict_output_metadata["MetadataFiles"][dst_filename],
-                                                        d_output_metadatadevice)
+                assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
+                                                                           dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                           d_output_metadatadevice)
             else:
                 if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
                     extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
                                               d_output_metadatadevice)
+            if type_files_in_dir == "images" or type_files_in_dir == "videos":
+                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
+                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
+            else:
+                if type_files_in_dir == "audios":
+                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
+                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
+            logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
+            check_files_coords_and_assign_them_to_device_if_necessary(logger,
+                                                                      lat_file,
+                                                                      long_file,
+                                                                      cumulus_poly,
+                                                                      dict_output_metadata["MetadataDevice"],
+                                                                      dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                      type_files_in_dir
+                                                                      )
+            logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
+            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
+            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
             f_pathlib.rename(dst_filename) #move
         json.dump(dict_output_metadata, write_dst)
         write_dst.close()
@@ -266,8 +399,8 @@ def main():
     try:
         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
         if len(device_deploymentsFilter_list) == 1:
-            tuple_result = get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list)
-            nomenclature_node, cumulus_name, date_of_deployment, ecosystems_name, latitude_device, longitude_device, node_cat_integrity = tuple_result
+            tuple_result = get_fields_from_device_deploymentsFilter_query_result(device_deploymentsFilter_list)
+            nomenclature_node, cumulus_name, cumulus_geometry, date_of_deployment, ecosystems_name, lat_device, long_device, node_cat_integrity = tuple_result
             logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
             logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s, ecosystems name: %s, \
                          latitude and longitude of device:  %s, %s, node category of integrity: %s" % \
@@ -276,19 +409,40 @@ def main():
                          cumulus_name,
                          date_of_deployment,
                          ecosystems_name,
-                         latitude_device,
-                         longitude_device,
+                         lat_device,
+                         long_device,
                          node_cat_integrity)
                        )
-            logger.info("modifying dict MetadataDevice")
-            dict_output_metadatadevice = modify_json_metadata_of_device(dict_source,
-                                                                        nomenclature_node,
-                                                                        cumulus_name,
-                                                                        date_of_deployment,
-                                                                        ecosystems_name,
-                                                                        latitude_device,
-                                                                        longitude_device,
-                                                                        node_cat_integrity)
+            logger.info("compute centroid of cumulus")
+            cumulus_geom_coordinates = cumulus_geometry["coordinates"][0]
+            cumulus_poly = build_polygon_for_cumulus_geometry(cumulus_geom_coordinates)
+            lat_centroid_cumulus  = round(cumulus_poly.centroid.x, 5)
+            long_centroid_cumulus = round(cumulus_poly.centroid.y, 5)
+            logger.info("Centroid of cumulus, lat: %s, long: %s" %(lat_centroid_cumulus,
+                                                                   long_centroid_cumulus))
+            logger.info("Validating lat and long of device are correct using lat long of cumulus centroid")
+            t_lat_long_device = check_if_point_is_in_cumulus_geom(lat_device,
+                                                                  long_device,
+                                                                  cumulus_poly)
+            if t_lat_long_device:
+                logger.info("Latitude and Longitude of device are in cumulus geometry")
+                lat_device  = t_lat_long_device[0]
+                long_device = t_lat_long_device[1]
+            else:
+                logger.info("Latitude and Longitude of device are not in cumulus geometry, returning None")
+                lat_device  = None
+                long_device = None
+            logger.info("filling dict MetadataDevice using query results from Zendro")
+            dict_output_metadatadevice = fill_metadata_of_device_with_query_results(dict_source,
+                                                                                    nomenclature_node,
+                                                                                    cumulus_name,
+                                                                                    lat_centroid_cumulus,
+                                                                                    long_centroid_cumulus,
+                                                                                    date_of_deployment,
+                                                                                    ecosystems_name,
+                                                                                    lat_device,
+                                                                                    long_device,
+                                                                                    node_cat_integrity)
             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                   cumulus_name,
                                                   nomenclature_node,
@@ -299,6 +453,7 @@ def main():
                                        path_with_files_copied,
                                        dict_source,
                                        dict_output_metadatadevice,
+                                       cumulus_poly,
                                        type_files_in_dir)
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
@@ -349,8 +504,8 @@ def main():
                     try:
                         device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
                         if len(device_deploymentsFilter_list) == 1:
-                            tuple_result = get_fields_from_device_deploymentsFilter(device_deploymentsFilter_list)
-                            nomenclature_node, cumulus_name, date_of_deployment, ecosystems_name, latitude_device, longitude_device, node_cat_integrity = tuple_result
+                            tuple_result = get_fields_from_device_deploymentsFilter_query_result(device_deploymentsFilter_list)
+                            nomenclature_node, cumulus_name, cumulus_geometry, date_of_deployment, ecosystems_name, lat_device, long_device, node_cat_integrity = tuple_result
                             logger.info("SUCCESSFUL extraction of nomenclature of node, cumulus name and date of deployment")
                             logger.info("directory %s has nom node: %s, cum name: %s, date of depl: %s, ecosystems name: %s, \
                                          latitude and longitude of device:  %s, %s, node category of integrity: %s" % \
@@ -359,19 +514,40 @@ def main():
                                          cumulus_name,
                                          date_of_deployment,
                                          ecosystems_name,
-                                         latitude_device,
-                                         longitude_device,
+                                         lat_device,
+                                         long_device,
                                          node_cat_integrity)
                                        )
-                            logger.info("modifying dict MetadataDevice")
-                            dict_output_metadatadevice = modify_json_metadata_of_device(dict_source,
-                                                                                        nomenclature_node,
-                                                                                        cumulus_name,
-                                                                                        date_of_deployment,
-                                                                                        ecosystems_name,
-                                                                                        latitude_device,
-                                                                                        longitude_device,
-                                                                                        node_cat_integrity)
+                            logger.info("compute centroid of cumulus")
+                            cumulus_geom_coordinates = cumulus_geometry["coordinates"][0]
+                            cumulus_poly = build_polygon_for_cumulus_geometry(cumulus_geom_coordinates)
+                            lat_centroid_cumulus  = round(cumulus_poly.centroid.x, 5)
+                            long_centroid_cumulus = round(cumulus_poly.centroid.y, 5)
+                            logger.info("Centroid of cumulus, lat: %s, long: %s" %(lat_centroid_cumulus,
+                                                                                   long_centroid_cumulus))
+                            logger.info("Validating lat and long of device are correct using lat long of cumulus centroid")
+                            t_lat_long_device = check_if_point_is_in_cumulus_geom(lat_device,
+                                                                                  long_device,
+                                                                                  cumulus_poly)
+                            if t_lat_long_device:
+                                logger.info("Latitude and Longitude of device are in cumulus geometry")
+                                lat_device  = t_lat_long_device[0]
+                                long_device = t_lat_long_device[1]
+                            else:
+                                logger.info("Latitude and Longitude of device are not in cumulus geometry, returning None")
+                                lat_device  = None
+                                long_device = None
+                            logger.info("filling dict MetadataDevice using query results from Zendro")
+                            dict_output_metadatadevice = fill_metadata_of_device_with_query_results(dict_source,
+                                                                                                    nomenclature_node,
+                                                                                                    cumulus_name,
+                                                                                                    lat_centroid_cumulus,
+                                                                                                    long_centroid_cumulus,
+                                                                                                    date_of_deployment,
+                                                                                                    ecosystems_name,
+                                                                                                    lat_device,
+                                                                                                    long_device,
+                                                                                                    node_cat_integrity)
                             path_with_files_copied = os.path.join(path_for_standard_directory,
                                                                   cumulus_name,
                                                                   nomenclature_node,
@@ -382,6 +558,7 @@ def main():
                                                        path_with_files_copied,
                                                        dict_source,
                                                        dict_output_metadatadevice,
+                                                       cumulus_poly,
                                                        type_files_in_dir)
                     except Exception as e:
                         logger.info(e)
