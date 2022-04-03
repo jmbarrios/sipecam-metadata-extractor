@@ -159,7 +159,7 @@ def main():
                 #validate lat long of fil are correct
                 logger.info("Validating lat and long of file are correct")
                 t_lat_long_file = check_if_point_is_in_cumulus_geom(lat_file,
-                                                                    long_file, 
+                                                                    long_file,
                                                                     cumulus_poly)
                 if t_lat_long_file:
                     logger.info("Latitude and Longitude of file are in cumulus geometry")
@@ -169,11 +169,11 @@ def main():
                     if not dict_source["MetadataDevice"]["Latitude"] and not dict_source["MetadataDevice"]["Longitude"]:
                         logger.info("Using lat long of file to fill lat long of device")
                         dict_source["MetadataDevice"]["Latitude"]  = lat_file
-                        dict_source["MetadataDevice"]["Longitude"] = long_file       
+                        dict_source["MetadataDevice"]["Longitude"] = long_file
                 else:
                     logger.info("Latitude and Longitude of file are not in cumulus geometry, returning None")
                     #if lat long of file are None then use lat long of device.
-                    lat_file  = dict_source["MetadataDevice"]["Latitude"] 
+                    lat_file  = dict_source["MetadataDevice"]["Latitude"]
                     long_file = dict_source["MetadataDevice"]["Longitude"]
 
                 if type_files_in_dir == "images" or type_files_in_dir == "videos":
