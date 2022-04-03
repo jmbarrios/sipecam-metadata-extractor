@@ -183,7 +183,7 @@ def main():
                     if type_files_in_dir == "audios":
                         dict_source["MetadataFiles"][filename]["Latitude"]  = lat_file
                         dict_source["MetadataFiles"][filename]["Longitude"] = long_file
-                logger.info("Writing lat long of centroid for MetadataFiles")
+                logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
                 dict_source["MetadataFiles"][filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
                 dict_source["MetadataFiles"][filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
                 file_with_metadata_dst = os.path.join(input_directory,
