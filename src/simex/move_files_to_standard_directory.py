@@ -53,7 +53,7 @@ def fill_metadata_of_device_with_query_results(d_source,
                                                longitude_device,
                                                node_cat_integrity):
     """
-    Auxiliary function to fill MetadataDevice key of dictionary d_source with results of
+    Fill MetadataDevice key of dictionary d_source with results of
     query to tables of Zendro.
     """
     dict_output_metadatadevice                             = d_source["MetadataDevice"].copy()
@@ -105,7 +105,7 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
                                               "_simex_metadata_files_and_device_" + \
                                               datetime.date.today().strftime("%d-%m-%Y") + \
                                               ".json")
-    write_dst = open(file_with_metadata_updated, "w+")
+    write_dst = open(file_with_metadata_updated, "w")
     dict_output_metadata["MetadataFiles"] = {}
 
     return (dict_output_metadata,
@@ -128,7 +128,7 @@ def md5_for_file(path, block_size=256*128):
 
 def get_fields_from_device_deploymentsFilter_query_result(device_deploymentsFilter_list):
     """
-    Auxiliary function to retrieve results of query to Zendro in variables.
+    Retrieve results of query to Zendro in variables.
     """
     device_deploymentsFilter_dict = device_deploymentsFilter_list[0]
     nomenclature_node     = device_deploymentsFilter_dict["node"]["nomenclatura"]
@@ -228,6 +228,104 @@ def check_files_coords_and_assign_them_to_device_if_necessary(logger,
             d_metadatafiles_for_file["Latitude"]  = lat_file
             d_metadatafiles_for_file["Longitude"] = long_file
 
+def move_files_to_standard_dir(logger,
+                               path_for_std_dir,
+                               src_dir,
+                               dst_dir,
+                               d_source,
+                               d_output_metadatadevice,
+                               cumulus_poly,
+                               type_files_in_dir):
+    """
+    Move files from source directory to destiny directory, both given in standard input from this cli (move_files).
+    dst_dir will hold standard directory. Prepends already built (cumulus name, nomenclature of node,
+    date of deployment for example). Specifications of standard dir are built (if audio then use Ultrasonico or
+    Audible names for instance) in this function.
+    d_source is a dictionary with info from extract cli simex (executed in a previous step before this cli).
+    d_output_metadatadevice is a dictionary with device metadata info which has info from extract cli
+    simex (executed in a previous step before this cli) and Zendro info extracted in this cli (move_files).
+    Will be used for filling d_source.
+    """
+
+    dict_output_metadata, standard_dir, write_dst = get_output_dict_std_dir_and_json_file(dst_dir,
+                                                                                          d_source,
+                                                                                          d_output_metadatadevice,
+                                                                                          type_files_in_dir)
+    lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
+    long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
+    os.makedirs(standard_dir, exist_ok=True)
+    #create dir that will hold new files moved to standar_dir. Will be in txt file and it's name will
+    #have the day when new files are moved.
+    name_dir_for_new_files_moved = "files_moved_with_simex"
+    path_for_dir_with_txt_of_new_files_moved = os.path.join(path_for_std_dir,
+                                                            name_dir_for_new_files_moved)
+    os.makedirs(path_for_dir_with_txt_of_new_files_moved, exist_ok=True)
+    path_for_txt_with_new_files_moved = os.path.join(path_for_dir_with_txt_of_new_files_moved,
+                                                     name_dir_for_new_files_moved) + "_" + \
+                                                     datetime.date.today().strftime("%d-%m-%Y") + \
+                                                     ".txt"
+    with open(path_for_txt_with_new_files_moved, "a") as write_dst_new_files:
+        write_dst_new_files.write(standard_dir + "\n")
+    
+    iterator = multiple_file_types(src_dir,
+                                   SUFFIXES_SIPECAM)
+    for filename in iterator:
+        f_pathlib = pathlib.Path(filename)
+        f_pathlib_suffix = f_pathlib.suffix
+        filename_md5 = md5_for_file(filename) #md5 will be basename of filename
+        if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+            filename_std = "".join([filename_md5,
+                                    f_pathlib_suffix])
+            logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                       filename_std)
+                       )
+        else:
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+                filename_std = "".join([filename_md5,
+                                        "_",
+                                        filename_number,
+                                        f_pathlib_suffix])
+                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                           filename_std)
+                           )
+        dst_filename = os.path.join(standard_dir, filename_std)
+        #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
+        dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+        if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+            assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
+                                                                       dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                       d_output_metadatadevice)
+        else:
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
+                                          d_output_metadatadevice)
+        if type_files_in_dir == "images" or type_files_in_dir == "videos":
+            lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
+            long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
+        else:
+            if type_files_in_dir == "audios":
+                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
+                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
+        logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
+        check_files_coords_and_assign_them_to_device_if_necessary(logger,
+                                                                  lat_file,
+                                                                  long_file,
+                                                                  cumulus_poly,
+                                                                  dict_output_metadata["MetadataDevice"],
+                                                                  dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                  type_files_in_dir
+                                                                  )
+        logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
+        dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
+        dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
+        f_pathlib.rename(dst_filename) #move
+    json.dump(dict_output_metadata, write_dst)
+    write_dst.close()
+    ######
+    ######
+    ######End function move_files_to_standard_dir
+
 def arguments_parse():
     help = """
 Move files to directory of server. Path that will have the files is created
@@ -256,87 +354,6 @@ move_files_to_standard_directory --directory_with_file_of_serial_number_and_date
 
 
 def main():
-    def move_files_to_standard_dir(src_dir,
-                                   dst_dir,
-                                   d_source,
-                                   d_output_metadatadevice,
-                                   cumulus_poly,
-                                   type_files_in_dir):
-        """
-        Move files from source directory to destiny directory, both given in standard input from this cli (move_files).
-        dst_dir will hold standard directory. Prepends already built (cumulus name, nomenclature of node,
-        date of deployment for example). Specifications of standard dir are built (if audio then use Ultrasonico or
-        Audible names for instance) in this function.
-        d_source is a dictionary with info from extract cli simex (executed in a previous step before this cli).
-        d_output_metadatadevice is a dictionary with device metadata info which has info from extract cli
-        simex (executed in a previous step before this cli) and Zendro info extracted in this cli (move_files).
-        Will be used for filling d_source.
-        """
-
-        dict_output_metadata, standard_dir, write_dst = get_output_dict_std_dir_and_json_file(dst_dir,
-                                                                                              d_source,
-                                                                                              d_output_metadatadevice,
-                                                                                              type_files_in_dir)
-        lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
-        long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
-        os.makedirs(standard_dir, exist_ok=True)
-
-        iterator = multiple_file_types(src_dir,
-                                       SUFFIXES_SIPECAM)
-        for filename in iterator:
-            f_pathlib = pathlib.Path(filename)
-            f_pathlib_suffix = f_pathlib.suffix
-            filename_md5 = md5_for_file(filename) #md5 will be basename of filename
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                filename_std = "".join([filename_md5,
-                                        f_pathlib_suffix])
-                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
-                                                                           filename_std)
-                           )
-            else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                    filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
-                    filename_std = "".join([filename_md5,
-                                            "_",
-                                            filename_number,
-                                            f_pathlib_suffix])
-                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
-                                                                               filename_std)
-                               )
-            dst_filename = os.path.join(standard_dir, filename_std)
-            #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
-            dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
-                                                                           dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                           d_output_metadatadevice)
-            else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                    extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
-                                              d_output_metadatadevice)
-            if type_files_in_dir == "images" or type_files_in_dir == "videos":
-                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
-                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
-            else:
-                if type_files_in_dir == "audios":
-                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
-                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
-            logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
-            check_files_coords_and_assign_them_to_device_if_necessary(logger,
-                                                                      lat_file,
-                                                                      long_file,
-                                                                      cumulus_poly,
-                                                                      dict_output_metadata["MetadataDevice"],
-                                                                      dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                      type_files_in_dir
-                                                                      )
-            logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
-            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
-            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
-            f_pathlib.rename(dst_filename) #move
-        json.dump(dict_output_metadata, write_dst)
-        write_dst.close()
-
     args = arguments_parse()
     directory_with_file_of_serial_number_and_dates = args.directory_with_file_of_serial_number_and_dates
     path_for_standard_directory = args.path_for_standard_directory
@@ -345,8 +362,8 @@ def main():
                                                  filename_for_logs)
     input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_dates).name
     file_with_serial_number_and_dates = os.path.join(directory_with_file_of_serial_number_and_dates,
-                                                         input_directory_purepath) + \
-                                                         "_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.json"
+                                                     input_directory_purepath) + \
+                                                     "_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.json"
 
     with open(file_with_serial_number_and_dates, 'r') as f:
         dict_source = json.load(f)
@@ -364,9 +381,9 @@ def main():
     filename_source_second_date, second_date_str = tup_source_dates[1]
 
     logger.info("File %s has date %s" % (filename_source_first_date,
-                                             first_date_str))
+                                         first_date_str))
     logger.info("File %s has date %s" % (filename_source_second_date,
-                                             second_date_str))
+                                         second_date_str))
 
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
@@ -443,14 +460,16 @@ def main():
                                                                                     lat_device,
                                                                                     long_device,
                                                                                     node_cat_integrity)
-            path_with_files_copied = os.path.join(path_for_standard_directory,
-                                                  cumulus_name,
-                                                  nomenclature_node,
-                                                  serial_number,
-                                                  date_of_deployment)
-            logger.info("path where files will be moved: %s" % path_with_files_copied)
-            move_files_to_standard_dir(directory_with_file_of_serial_number_and_dates,
-                                       path_with_files_copied,
+            path_for_files_moved = os.path.join(path_for_standard_directory,
+                                                cumulus_name,
+                                                nomenclature_node,
+                                                serial_number,
+                                                date_of_deployment)
+            logger.info("path where files will be moved: %s" % path_for_files_moved)
+            move_files_to_standard_dir(logger,
+                                       path_for_standard_directory,
+                                       directory_with_file_of_serial_number_and_dates,
+                                       path_for_files_moved,
                                        dict_source,
                                        dict_output_metadatadevice,
                                        cumulus_poly,
@@ -548,14 +567,16 @@ def main():
                                                                                                     lat_device,
                                                                                                     long_device,
                                                                                                     node_cat_integrity)
-                            path_with_files_copied = os.path.join(path_for_standard_directory,
-                                                                  cumulus_name,
-                                                                  nomenclature_node,
-                                                                  serial_number,
-                                                                  date_of_deployment)
-                            logger.info("path where files will be moved: %s" % path_with_files_copied)
-                            move_files_to_standard_dir(directory_with_file_of_serial_number_and_dates,
-                                                       path_with_files_copied,
+                            path_for_files_moved = os.path.join(path_for_standard_directory,
+                                                                cumulus_name,
+                                                                nomenclature_node,
+                                                                serial_number,
+                                                                date_of_deployment)
+                            logger.info("path where files will be moved: %s" % path_for_files_moved)
+                            move_files_to_standard_dir(logger,
+                                                       path_for_standard_directory,
+                                                       directory_with_file_of_serial_number_and_dates,
+                                                       path_for_files_moved,
                                                        dict_source,
                                                        dict_output_metadatadevice,
                                                        cumulus_poly,
