@@ -73,7 +73,7 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
                                           d_output_metadatadevice,
                                           type_files_in_dir):
     """
-    Returns dictionary that will be used to fill json file, which is also open here, and
+    Returns dictionary that will be used to fill json file, also will be returned and
     standard directory where files will be moved.
     """
     dict_output_metadata  = {}
@@ -105,12 +105,12 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
                                               "_simex_metadata_files_and_device_" + \
                                               datetime.date.today().strftime("%d-%m-%Y") + \
                                               ".json")
-    write_dst = open(file_with_metadata_updated, "w")
+    pathlib.Path(file_with_metadata_updated).unlink(missing_ok=True) #remove in case it exists
     dict_output_metadata["MetadataFiles"] = {}
 
     return (dict_output_metadata,
             standard_dir,
-            write_dst)
+            file_with_metadata_updated)
 
 def md5_for_file(path, block_size=256*128):
     """
@@ -247,10 +247,10 @@ def move_files_to_standard_dir(logger,
     Will be used for filling d_source.
     """
 
-    dict_output_metadata, standard_dir, write_dst = get_output_dict_std_dir_and_json_file(dst_dir,
-                                                                                          d_source,
-                                                                                          d_output_metadatadevice,
-                                                                                          type_files_in_dir)
+    dict_output_metadata, standard_dir, output_filename = get_output_dict_std_dir_and_json_file(dst_dir,
+                                                                                                d_source,
+                                                                                                d_output_metadatadevice,
+                                                                                                type_files_in_dir)
     lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
     long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
     os.makedirs(standard_dir, exist_ok=True)
@@ -269,59 +269,59 @@ def move_files_to_standard_dir(logger,
     
     iterator = multiple_file_types(src_dir,
                                    SUFFIXES_SIPECAM)
-    for filename in iterator:
-        f_pathlib = pathlib.Path(filename)
-        f_pathlib_suffix = f_pathlib.suffix
-        filename_md5 = md5_for_file(filename) #md5 will be basename of filename
-        if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-            filename_std = "".join([filename_md5,
-                                    f_pathlib_suffix])
-            logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
-                                                                       filename_std)
-                       )
-        else:
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+    with open(output_filename, "w") as write_dst:
+        for filename in iterator:
+            f_pathlib = pathlib.Path(filename)
+            f_pathlib_suffix = f_pathlib.suffix
+            filename_md5 = md5_for_file(filename) #md5 will be basename of filename
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
                 filename_std = "".join([filename_md5,
-                                        "_",
-                                        filename_number,
                                         f_pathlib_suffix])
                 logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
                                                                            filename_std)
                            )
-        dst_filename = os.path.join(standard_dir, filename_std)
-        #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
-        dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-        if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-            assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
-                                                                       dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                       d_output_metadatadevice)
-        else:
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
-                                          d_output_metadatadevice)
-        if type_files_in_dir == "images" or type_files_in_dir == "videos":
-            lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
-            long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
-        else:
-            if type_files_in_dir == "audios":
-                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
-                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
-        logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
-        check_files_coords_and_assign_them_to_device_if_necessary(logger,
-                                                                  lat_file,
-                                                                  long_file,
-                                                                  cumulus_poly,
-                                                                  dict_output_metadata["MetadataDevice"],
-                                                                  dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                  type_files_in_dir
-                                                                  )
-        logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
-        dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
-        dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
-        f_pathlib.rename(dst_filename) #move
-    json.dump(dict_output_metadata, write_dst)
-    write_dst.close()
+            else:
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                    filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+                    filename_std = "".join([filename_md5,
+                                            "_",
+                                            filename_number,
+                                            f_pathlib_suffix])
+                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                               filename_std)
+                               )
+            dst_filename = os.path.join(standard_dir, filename_std)
+            #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
+            dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
+                                                                           dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                           d_output_metadatadevice)
+            else:
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                    extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
+                                              d_output_metadatadevice)
+            if type_files_in_dir == "images" or type_files_in_dir == "videos":
+                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
+                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
+            else:
+                if type_files_in_dir == "audios":
+                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
+                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
+            logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
+            check_files_coords_and_assign_them_to_device_if_necessary(logger,
+                                                                      lat_file,
+                                                                      long_file,
+                                                                      cumulus_poly,
+                                                                      dict_output_metadata["MetadataDevice"],
+                                                                      dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                      type_files_in_dir
+                                                                      )
+            logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
+            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
+            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
+            f_pathlib.rename(dst_filename) #move
+        json.dump(dict_output_metadata, write_dst)
     ######
     ######
     ######End function move_files_to_standard_dir
