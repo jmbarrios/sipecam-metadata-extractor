@@ -78,6 +78,7 @@ def main():
     output_filename = os.path.join(input_directory,
                                    input_directory_purepath) + \
                                    "_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.json"
+    pathlib.Path(output_filename).unlink(missing_ok=True) #remove in case it exists
     logger.info("extraction of serial_numbers_dates_and_metadata_of_files_and_device")
     logger.info("logs for extraction of serial_numbers_dates_and_metadata_of_files_and_device in %s" % output_filename)
 
