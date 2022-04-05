@@ -232,8 +232,7 @@ def main():
             diff_dates_datetime = datetime.timedelta(diff_dates)
             d2_datetime = d1_datetime + diff_dates_datetime
             d2_str = datetime.datetime.strftime(d2_datetime, format_string_data)
-            d_output["FirstAndLastDate"] = {only_key: d1_str,
-                                            only_key: d2_str
+            d_output["FirstAndLastDate"] = {only_key: [d1_str, d2_str]
                                            }
             d_output["DaysBetweenFirstAndLastDate"] = 1
             del d_output["Dates"]
