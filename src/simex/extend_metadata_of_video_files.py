@@ -65,9 +65,8 @@ def main():
     for filename, metadata_file in dict_source["MetadataFiles"].items():
         filename_pathlib = pathlib.Path(filename)
         if filename_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
-            dict_source["MetadataFiles"][filename]["SerialNumber"]  = serial_number            
-            
-            
+            dict_source["MetadataFiles"][filename]["SerialNumber"]  = serial_number
+
     file_with_video_metadata_dst = os.path.join(input_directory,
                                                 input_directory_name) + \
                                                 "_simex_metadata_files_and_device_" + \
