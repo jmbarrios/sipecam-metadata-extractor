@@ -118,7 +118,7 @@ def main():
                 logger.info(e)
                 logger.info("there were no audios nor images found in dir: %s, serial number can not be retrieved from " % input_dir)
                 not_success = False
-        #as videos have no coordinates in d_output["GPSFile"] for images they will be saved
+        #as videos have no coordinates, in d_output["GPSFile"] they will be saved and images will be used
         f_pathlib = pathlib.Path(filename)
         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
             d_output["GPSFile"] = read_metadata_image.extract_gps(filename)
@@ -133,6 +133,7 @@ def main():
                                        SUFFIXES_SIPECAM)
         d_output["Dates"] = {}
         d_output["MetadataFiles"] = {}
+        serial_number = d_output["MetadataDevice"]["SerialNumber"]
 
         if parallel:
             with Pool(processes=number_of_processes) as pool:
@@ -153,12 +154,14 @@ def main():
                         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
                             if not metadata_file["GPSLatitudeRef"]:
                                 logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
-                        #as videos have no coordinates variable d_gps_for_videos will be used to assign them
+                        #as videos have no coordinates, variable d_gps_for_videos will be used to assign them
                         if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                             d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
                             d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
                             d_output["MetadataFiles"][filename]["GPSLatitude"]     = d_gps_for_videos["GPSLatitude"]
                             d_output["MetadataFiles"][filename]["GPSLongitude"]    = d_gps_for_videos["GPSLongitude"]
+                            #videos don't have Serial Number, then will be added using extraction from image
+                            d_output["MetadataFiles"][filename]["SerialNumber"]    = serial_number
         else:
             for filename in iterator:
                 logger.info("extraction of date of %s" % filename)
@@ -180,6 +183,8 @@ def main():
                         d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
                         d_output["MetadataFiles"][filename]["GPSLatitude"]     = d_gps_for_videos["GPSLatitude"]
                         d_output["MetadataFiles"][filename]["GPSLongitude"]    = d_gps_for_videos["GPSLongitude"]
+                        #videos don't have Serial Number, then will be added using extraction from image
+                        d_output["MetadataFiles"][filename]["SerialNumber"]    = serial_number
 
         if len(d_output["Dates"].keys()) < 1:
             logger.info("there were no dates to extract")
