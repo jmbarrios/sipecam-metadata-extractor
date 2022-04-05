@@ -266,7 +266,7 @@ def move_files_to_standard_dir(logger,
                                                      ".txt"
     with open(path_for_txt_with_new_files_moved, "a") as write_dst_new_files:
         write_dst_new_files.write(standard_dir + "\n")
-    
+
     iterator = multiple_file_types(src_dir,
                                    SUFFIXES_SIPECAM)
     with open(output_filename, "w") as write_dst:
@@ -369,21 +369,30 @@ def main():
         dict_source = json.load(f)
 
     serial_number = dict_source["MetadataDevice"]["SerialNumber"]
-    dict_source_dates = dict_source["FirstAndLastDate"]
+    dict_source_dates = dict_source["FirstAndLastDate"] #dict_source_dates is a dictionary
     diff_dates = dict_source["DaysBetweenFirstAndLastDate"]
 
     logger.info("Dir %s has serial number %s" % (directory_with_file_of_serial_number_and_dates,
                                                  serial_number))
-
-    tup_source_dates = tuple(dict_source_dates.items())
-
-    filename_source_first_date,  first_date_str  = tup_source_dates[0]
-    filename_source_second_date, second_date_str = tup_source_dates[1]
-
-    logger.info("File %s has date %s" % (filename_source_first_date,
-                                         first_date_str))
-    logger.info("File %s has date %s" % (filename_source_second_date,
-                                         second_date_str))
+    try:
+        tup_source_dates = tuple(dict_source_dates.items())
+        filename_source_first_date,  first_date_str  = tup_source_dates[0]
+        filename_source_second_date, second_date_str = tup_source_dates[1]
+        logger.info("File %s has date %s" % (filename_source_first_date,
+                                             first_date_str))
+        logger.info("File %s has date %s" % (filename_source_second_date,
+                                             second_date_str))
+    except Exception as e:
+        logger.info(e)
+        logger.info("couldn't retrieve second_date_str possibly related to only one file taken by device")
+        tup_source_dates = tuple(dict_source_dates.items())
+        filename_source_first_date,  list_dates_str  = tup_source_dates[0]
+        first_date_str  = list_dates_str[0]
+        second_date_str = list_dates_str[1]
+        logger.info("File %s has date %s" % (filename_source_first_date,
+                                             first_date_str))
+        logger.info("File %s only was taken in one date and date %s will be used for query" % (filename_source_first_date,
+                                                                                               second_date_str))
 
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 

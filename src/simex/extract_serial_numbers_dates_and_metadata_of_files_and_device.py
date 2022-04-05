@@ -218,8 +218,24 @@ def main():
 
         d_output["Dates"] = order_dict_dates()
         d_output_dates_keys = d_output["Dates"].keys()
+
         if len(d_output_dates_keys) >= 2:
             extract_first_last_dates_and_difference()
+        #there are devices that were placed only 1 day
+        if len(d_output_dates_keys) == 1:
+            only_key = list(d_output_dates_keys)[0]
+            d1_str = d_output["Dates"][only_key]
+            format_string_data = "%Y-%m-%d"
+            d1_datetime = datetime.datetime.strptime(d1_str,
+                                                     format_string_data)
+            diff_dates = 1
+            diff_dates_datetime = datetime.timedelta(diff_dates)
+            d2_datetime = d1_datetime + diff_dates_datetime
+            d2_str = datetime.datetime.strftime(d2_datetime, format_string_data)
+            d_output["FirstAndLastDate"] = {only_key: [d1_str, d2_str]
+                                           }
+            d_output["DaysBetweenFirstAndLastDate"] = 1
+            del d_output["Dates"]
 
     with open(output_filename, "w") as dst:
         dict_output = {}
