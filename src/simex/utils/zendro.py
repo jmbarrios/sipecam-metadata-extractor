@@ -131,6 +131,7 @@ def query_for_move_files_to_standard_directory(serial_number,
     op.physical_devices.device_deployments_filter.node.cat_integr()
     op.physical_devices.device_deployments_filter.node.ecosystems.name()
     op.physical_devices.device_deployments_filter.cumulus.name()
+    op.physical_devices.device_deployments_filter.cumulus.geometry()
     op.physical_devices.device_deployments_filter.date_deployment()
     op.physical_devices.device_deployments_filter.latitude()
     op.physical_devices.device_deployments_filter.longitude()
@@ -203,8 +204,63 @@ def query_alternative_for_move_files_to_standard_directory(serial_number,
     op.physical_devices.device_deployments_filter.node.cat_integr()
     op.physical_devices.device_deployments_filter.node.ecosystems.name()
     op.physical_devices.device_deployments_filter.cumulus.name()
+    op.physical_devices.device_deployments_filter.cumulus.geometry()
     op.physical_devices.device_deployments_filter.date_deployment()
     op.physical_devices.device_deployments_filter.latitude()
     op.physical_devices.device_deployments_filter.longitude()
+    query_result = endpoint(op)
+    return (query_result, op)
+
+def query_for_extend_metadata_of_files(serial_number,
+                                       first_date,
+                                       second_date,
+                                       file_type):
+    """
+    Execute in GQL of Zendro:
+    query {
+      physical_devices(pagination: {limit: 0},
+                       search: {field: serial_number,
+                                value: "<serial_number>",
+                                operator: like})
+                        {
+                        device_deploymentsFilter(pagination: {limit: 0},
+                                                 search: {operator: and,
+                                                          search: [{field: date_deployment,
+                                                                    value: "<first_date>",
+                                                                    valueType: String,
+                                                                    operator: gte},
+                                                                  {field: date_deployment,
+                                                                   value: "<second_date>",
+                                                                   valueType: String,
+                                                                   operator: lte}]
+                                                          })
+                                                 {
+                                                  cumulus {
+                                                      geometry
+                                                       }
+                                                  }
+                        }
+          }
+    """
+    endpoint, op = get_sgqlc_endpoint_and_operation_for_query()
+    auxiliar_func_for_query_move_using_file_type(op, serial_number, file_type)
+
+    dict_for_device_deployments_filter_1 = {"field"   : "date_deployment",
+                                            "value"   : first_date,
+                                            "valueType": "String",
+                                            "operator": "gte"}
+    dict_for_device_deployments_filter_2 = {"field"   : "date_deployment",
+                                            "value"   : second_date,
+                                            "valueType": "String",
+                                            "operator": "lte"}
+    list_for_device_deployments_filter = [dict_for_device_deployments_filter_1,
+                                          dict_for_device_deployments_filter_2]
+
+    op.physical_devices.device_deployments_filter(pagination={"limit": 0},
+                                                  search={"operator": "and",
+                                                          "search": list_for_device_deployments_filter
+                                                          }
+                                                  )
+    op.physical_devices.device_deployments_filter.cumulus.geometry() #after this line op has type sgqlc selection
     query_result = endpoint(op)
     return (query_result, op)

@@ -42,13 +42,10 @@ def extract_metadata(filename):
 def arguments_parse():
     help = """
 Traverse files in a directory to extract their serial number and dates.
-
 --------------
 Example usage:
 --------------
-
 extract_serial_numbers_dates_and_metadata_of_files_and_device --input_dir /dir/
-
 """
 
 
@@ -81,6 +78,7 @@ def main():
     output_filename = os.path.join(input_directory,
                                    input_directory_purepath) + \
                                    "_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.json"
+    pathlib.Path(output_filename).unlink(missing_ok=True) #remove in case it exists
     logger.info("extraction of serial_numbers_dates_and_metadata_of_files_and_device")
     logger.info("logs for extraction of serial_numbers_dates_and_metadata_of_files_and_device in %s" % output_filename)
 
@@ -116,8 +114,6 @@ def main():
                     logger.info("SUCCESSFUL extraction of serial number of %s" % filename)
                     not_success = False
                     d_output["MetadataDevice"] = res_extract_metadata_of_device
-                if len(d_output["MetadataDevice"].keys()) < 1:
-                    logger.info("FAILED extraction of serial number of files in dir %s" % input_dir)
             except Exception as e:
                 logger.info(e)
                 logger.info("there were no audios nor images found in dir: %s, serial number can not be retrieved from " % input_dir)
@@ -126,6 +122,8 @@ def main():
         f_pathlib = pathlib.Path(filename)
         if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
             d_output["GPSFile"] = read_metadata_image.extract_gps(filename)
+            if not d_output["GPSFile"]["GPSLatitudeRef"]: #check if extraction of GPS information was successful
+                logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
 
     def extract_metadata_of_files(input_dir,
                                   d_output,
@@ -151,8 +149,11 @@ def main():
                         d_output["Dates"][filename] = date_file
                         filename, metadata_file = t[1] #t[1] tuple with filename and metadata as 1st, 2nd elements resp
                         d_output["MetadataFiles"][filename] = metadata_file
-                        #as videos have no coordinates variable d_gps_for_videos will be used to assign them
                         f_pathlib = pathlib.Path(filename)
+                        if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                            if not metadata_file["GPSLatitudeRef"]:
+                                logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
+                        #as videos have no coordinates variable d_gps_for_videos will be used to assign them
                         if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                             d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
                             d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
@@ -172,6 +173,8 @@ def main():
                     metadata_file = tuple_metadata_of_file[1] #tuple with filename and metadata as 1st and 2nd elements resp
                     d_output["MetadataFiles"][filename] = metadata_file
                     f_pathlib = pathlib.Path(filename)
+                    if f_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and not metadata_file["GPSLatitudeRef"]:
+                        logger.info("there were no GPS metadata associated with file %s, returning empty string" % filename)
                     if f_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
                         d_output["MetadataFiles"][filename]["GPSLatitudeRef"]  = d_gps_for_videos["GPSLatitudeRef"]
                         d_output["MetadataFiles"][filename]["GPSLongitudeRef"] = d_gps_for_videos["GPSLongitudeRef"]
@@ -206,13 +209,33 @@ def main():
             d2_datetime = datetime.datetime.strptime(d2_str,
                                                      format_string_data)
             diff_datetimes = d2_datetime - d1_datetime
-            d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes.days
+            diff_datetimes_days = diff_datetimes.days
+            #there are devices that were placed only 1 day, thereby diff_datetimes_days = 0
+            if diff_datetimes_days == 0:
+                diff_datetimes_days = 1
+            d_output["DaysBetweenFirstAndLastDate"] = diff_datetimes_days
             del d_output["Dates"]
 
         d_output["Dates"] = order_dict_dates()
         d_output_dates_keys = d_output["Dates"].keys()
+
         if len(d_output_dates_keys) >= 2:
             extract_first_last_dates_and_difference()
+        #there are devices that were placed only 1 day
+        if len(d_output_dates_keys) == 1:
+            only_key = list(d_output_dates_keys)[0]
+            d1_str = d_output["Dates"][only_key]
+            format_string_data = "%Y-%m-%d"
+            d1_datetime = datetime.datetime.strptime(d1_str,
+                                                     format_string_data)
+            diff_dates = 1
+            diff_dates_datetime = datetime.timedelta(diff_dates)
+            d2_datetime = d1_datetime + diff_dates_datetime
+            d2_str = datetime.datetime.strftime(d2_datetime, format_string_data)
+            d_output["FirstAndLastDate"] = {only_key: [d1_str, d2_str]
+                                           }
+            d_output["DaysBetweenFirstAndLastDate"] = 1
+            del d_output["Dates"]
 
     with open(output_filename, "w") as dst:
         dict_output = {}
@@ -231,4 +254,3 @@ def main():
         except Exception as e:
             logger.info("GPSFile key not found for videos, files from directory are of audio")
         json.dump(dict_output, dst)
-

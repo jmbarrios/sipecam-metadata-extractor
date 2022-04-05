@@ -1,5 +1,9 @@
 # sipecam-metadata-extractor
 
+`simex` uses:
+
+[pyexiftool](https://github.com/sylikc/pyexiftool), see [pyexiftool/examples](https://sylikc.github.io/pyexiftool/examples.html)
+
 # Running `sipecam/simex:0.1` docker image in CONABIO cluster
 
 Ssh to one node of CONABIO cluster as user `madmex_admin`.
