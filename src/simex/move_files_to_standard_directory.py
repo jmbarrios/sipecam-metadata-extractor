@@ -392,7 +392,7 @@ def main():
         logger.info("File %s has date %s" % (filename_source_first_date,
                                              first_date_str))
         logger.info("File %s only was taken in one date and date %s will be used for query" % (filename_source_first_date,
-                                                                                               first_date_str))
+                                                                                               second_date_str))
 
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
