@@ -8,6 +8,7 @@ cli_move_files_to_standard_directory = "move_files_to_standard_directory = simex
 cli_check_if_there_are_audio_empty_files_in_dir_and_move_them = "check_if_there_are_audio_empty_files_in_dir_and_move_them = simex.check_if_there_are_audio_empty_files_in_dir_and_move_them:main"
 cli_extend_metadata_of_audio_files = "extend_metadata_of_audio_files = simex.extend_metadata_of_audio_files:main"
 cli_extend_metadata_of_files = "extend_metadata_of_files = simex.extend_metadata_of_files:main"
+cli_extend_metadata_of_video_files = "extend_metadata_of_video_files = simex.extend_metadata_of_video_files:main"
 
 setup(name="simex", version=0.1,
       description=u"Simplify extraction of metadata for SiPeCaM files",
@@ -28,7 +29,8 @@ setup(name="simex", version=0.1,
                               cli_move_files_to_standard_directory,
                               cli_check_if_there_are_audio_empty_files_in_dir_and_move_them,
                               cli_extend_metadata_of_audio_files,
-                              cli_extend_metadata_of_files
+                              cli_extend_metadata_of_files,
+                              cli_extend_metadata_of_video_files
                               ]
                      }
       )
