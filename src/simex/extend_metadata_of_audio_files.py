@@ -5,8 +5,12 @@ import pathlib
 import json
 import datetime
 
+import exiftool
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.directories_and_files import multiple_file_types
+
+TAG_FOR_DURATION = {"Composite:Duration"  : "Duration"
+                   }
 
 def arguments_parse():
     help = """
@@ -60,11 +64,13 @@ def main():
 
     with open(file_with_audio_metadata_source, 'r') as f:
         dict_source = json.load(f)
-    lat  = dict_source["MetadataDevice"]["Latitude"]
-    long = dict_source["MetadataDevice"]["Longitude"]
+    
     for filename, metadata_file in dict_source["MetadataFiles"].items():
-        dict_source["MetadataFiles"][filename]["Latitude"]  = lat
-        dict_source["MetadataFiles"][filename]["Longitude"] = long
+        with exiftool.ExifTool(common_args=["-G"]) as et:
+            params = ["-duration#"]
+            duration_dict = et.get_metadata(filename, params=params)
+        dict_source["MetadataFiles"][filename]["Duration"]  = duration_dict["Composite:Duration"]
+
     file_with_audio_metadata_dst = os.path.join(input_directory,
                                                 input_directory_name) + \
                                                 "_simex_metadata_files_and_device_" + \
