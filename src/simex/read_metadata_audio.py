@@ -26,8 +26,7 @@ TAGS_FOR_FILE = {"File:FileSize"       : "FileSize"      ,
                  "RIFF:SampleRate"     : "SampleRate"    ,
                  "RIFF:AvgBytesPerSec" : "AvgBytesPerSec",
                  "RIFF:BitsPerSample"  : "BitsPerSample" ,
-                 "RIFF:Comment"        : "Comment"       ,
-                 "Composite:Duration"  : "Duration"
+                 "RIFF:Comment"        : "Comment"
                 }
 
 TAGS_FOR_DEVICE = {"RIFF:Artist": "Artist"}
@@ -136,6 +135,11 @@ def get_metadata_of_file(filename):
                              }
     for k,v in TAGS_FOR_FILE.items():
         dict_metadata_of_file[v] = exiftool_metadata[k]
+    #see: https://stackoverflow.com/questions/67610430/getting-exiftool-duration-without-fuzzy-time
+    with exiftool.ExifTool(common_args=["-G"]) as et:
+        params = ["-duration#"]
+        duration_dict = et.get_metadata(filename, params=params)
+    dict_metadata_of_file["Duration"] = duration_dict["Composite:Duration"]
     return dict_metadata_of_file
 
 def extract_date(filename):
