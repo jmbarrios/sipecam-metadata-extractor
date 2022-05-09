@@ -5,9 +5,10 @@ import pathlib
 import json
 import datetime
 
-from simex import SUFFIXES_SIPECAM_VIDEO
+from simex import SUFFIXES_SIPECAM_IMAGES, SUFFIXES_SIPECAM_VIDEO
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.directories_and_files import multiple_file_types
+from simex import read_metadata_video
 
 def arguments_parse():
     help = """
@@ -34,7 +35,7 @@ extend_metadata_of_video_files --input_directory_video /dir/
 def main():
     args = arguments_parse()
     input_directory = args.input_directory_video
-    filename_for_logs = "logs_simex_extend_metadata_of_video_files"
+    filename_for_logs = "logs_simex_extend_metadata_of_video_files_2"
     logger = get_logger_for_writing_logs_to_file(input_directory,
                                                  filename_for_logs)
     input_directory_name = pathlib.Path(input_directory).name
@@ -61,11 +62,33 @@ def main():
 
     with open(file_with_video_metadata_source, 'r') as f:
         dict_source = json.load(f)
-    serial_number  = dict_source["MetadataDevice"]["SerialNumber"]
+    serial_number     = dict_source["MetadataDevice"]["SerialNumber"]
+    centroid_cum_lat  = dict_source["MetadataDevice"]["CentroidCumulusLatitude"]
+    centroid_cum_long = dict_source["MetadataDevice"]["CentroidCumulusLongitude"]
+    
     for filename, metadata_file in dict_source["MetadataFiles"].items():
         filename_pathlib = pathlib.Path(filename)
-        if filename_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
-            dict_source["MetadataFiles"][filename]["SerialNumber"]  = serial_number
+        if filename_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+            gps_latitude_ref  = dict_source["MetadataFiles"][filename]["GPSLatitudeRef"]
+            gps_longitude_ref = dict_source["MetadataFiles"][filename]["GPSLongitudeRef"]
+            gps_latitude      = dict_source["MetadataFiles"][filename]["GPSLatitude"]
+            gps_longitude     = dict_source["MetadataFiles"][filename]["GPSLongitude"]
+            break
+    
+    with open("/LUSTRE/sacmod/SIPECAM/videos_without_metadata_92.txt", 'r') as txt:
+        list_with_files_to_extract_video_metadata = txt.read().splitlines()
+    
+    for filename in list_with_files_to_extract_video_metadata:
+        metadata_file = read_metadata_video.get_metadata_of_file(filename)
+        dict_source["MetadataFiles"][filename] = metadata_file
+        dict_source["MetadataFiles"][filename]["SerialNumber"]             = serial_number
+        dict_source["MetadataFiles"][filename]["CentroidCumulusLatitude"]  = centroid_cum_lat
+        dict_source["MetadataFiles"][filename]["CentroidCumulusLongitude"] = centroid_cum_long
+        dict_source["MetadataFiles"][filename]["GPSLatitudeRef"]           = gps_latitude_ref
+        dict_source["MetadataFiles"][filename]["GPSLongitudeRef"]          = gps_longitude_ref
+        dict_source["MetadataFiles"][filename]["GPSLatitude"]              = gps_latitude
+        dict_source["MetadataFiles"][filename]["GPSLongitude"]             = gps_longitude
+          
 
     file_with_video_metadata_dst = os.path.join(input_directory,
                                                 input_directory_name) + \
