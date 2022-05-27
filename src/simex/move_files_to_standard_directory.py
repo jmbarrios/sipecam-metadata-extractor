@@ -506,13 +506,22 @@ def main():
                                                                                    format_string_data) for d in device_deploymentsFilter_list]
                     first_datetime  = datetime.datetime.strptime(first_date_str, format_string_data)
                     second_datetime = datetime.datetime.strptime(second_date_str, format_string_data)
-                    diff_dates_datetime = datetime.timedelta(diff_dates)
-                    list_datetimes_device_deployment_increased = [d + diff_dates_datetime/2 for d in list_datetimes_device_deployment]
-                    k = 0
-                    for datetimes_device_deployment in list_datetimes_device_deployment_increased:
-                        if first_datetime <= datetimes_device_deployment and datetimes_device_deployment <= second_datetime:
+                    list_datetimes_device_deployment.sort()
+                    def get_date_of_device_deploymentsFilter_list(d):
+                        return datetime.datetime.strptime(d["date_deployment"].split('T')[0],
+                                                          format_string_data)
+                    device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
+                    max_number_of_days = 60
+                    for k in range(len(list_datetimes_device_deployment) - 1):
+                        datetime_device_deployment_1 = list_datetimes_device_deployment[k]
+                        datetime_device_deployment_2 = list_datetimes_device_deployment[k+1]
+                        diff_datetimes = second_datetime - datetime_device_deployment_1
+                        diff_datetimes_days = diff_datetimes.days
+                        if datetime_device_deployment_1 <= first_datetime and second_datetime <= datetime_device_deployment_2 and diff_datetimes_days <= max_number_of_days:
                             idx_date = k
-                        k += 1
+                            break
+                        else:
+                            idx_date = None
                     date_for_filter = device_deploymentsFilter_list[idx_date]["date_deployment"]
                     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
                         query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
