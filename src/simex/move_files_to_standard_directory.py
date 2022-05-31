@@ -511,13 +511,13 @@ def main():
                         return datetime.datetime.strptime(d["date_deployment"].split('T')[0],
                                                           format_string_data)
                     device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
-                    max_number_of_days = 60
+                    MAX_NUMBER_OF_DAYS = 40
                     for k in range(len(list_datetimes_device_deployment) - 1):
                         datetime_device_deployment_1 = list_datetimes_device_deployment[k]
                         datetime_device_deployment_2 = list_datetimes_device_deployment[k+1]
                         diff_datetimes = second_datetime - datetime_device_deployment_1
                         diff_datetimes_days = diff_datetimes.days
-                        if datetime_device_deployment_1 <= first_datetime and second_datetime <= datetime_device_deployment_2 and diff_datetimes_days <= max_number_of_days:
+                        if datetime_device_deployment_1 <= first_datetime and second_datetime <= datetime_device_deployment_2 and diff_datetimes_days <= MAX_NUMBER_OF_DAYS:
                             idx_date = k
                             break
                         else:
