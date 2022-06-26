@@ -348,7 +348,7 @@ move_files_to_standard_directory --directory_with_file_of_serial_number_and_date
     parser.add_argument("--path_for_standard_directory",
                         required=True,
                         default=None,
-                        help="Directory that has json file with serial number and dates")
+                        help="Standard directory that will have files moved")
     args = parser.parse_args()
     return args
 
@@ -397,6 +397,16 @@ def main():
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
     filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
+    
+    if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES or filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+        if diff_dates >= 2: #there were a lot of problems for images or videos that had DaysBetweenFirstAndLastDate 0 or 1 as there were erronous files
+                            #only images or videos with DaysBetweenFirstAndLastDate >=2 will be incorporated into data standard dir.
+            move_images_or_videos = True
+        else:
+            move_images_or_videos = False
+            query_result          = None
+            operation_sgqlc       = None
+            logger.info("There were images or videos in %s dir that have DaysBetweenFirstAndLastDate < 2, will not be moved", directory_with_file_of_serial_number_and_dates)
 
     #make query assuming first_date_str is less than date of deployment of device
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
@@ -406,20 +416,19 @@ def main():
                                                                                    second_date_str,
                                                                                    file_type="audio")
     else:
-        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_images_or_videos:
             type_files_in_dir = "images"
             query_result, operation_sgqlc = query_for_move_files_to_standard_directory(serial_number,
                                                                                        first_date_str,
                                                                                        second_date_str,
                                                                                        file_type="image")
         else:
-            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_images_or_videos:
                 type_files_in_dir = "videos"
                 query_result, operation_sgqlc = query_for_move_files_to_standard_directory(serial_number,
                                                                                            first_date_str,
                                                                                            second_date_str,
                                                                                            file_type="video")
-
     logger.info("Query to Zendro GQL: %s" % operation_sgqlc)
 
     try:
@@ -490,11 +499,11 @@ def main():
                     query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
                                                                                                                     file_type="audio")
                 else:
-                    if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                    if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_images_or_videos:
                         query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
                                                                                                                         file_type="image")
                     else:
-                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_images_or_videos:
                             query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
                                                                                                                             file_type="video")
                 logger.info("Query alternative auxiliar to Zendro GQL: %s" % operation_sgqlc)
@@ -511,7 +520,9 @@ def main():
                         return datetime.datetime.strptime(d["date_deployment"].split('T')[0],
                                                           format_string_data)
                     device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
+                    
                     MAX_NUMBER_OF_DAYS = 40
+                    
                     for k in range(len(list_datetimes_device_deployment) - 1):
                         datetime_device_deployment_1 = list_datetimes_device_deployment[k]
                         datetime_device_deployment_2 = list_datetimes_device_deployment[k+1]
@@ -523,17 +534,18 @@ def main():
                         else:
                             idx_date = None
                     date_for_filter = device_deploymentsFilter_list[idx_date]["date_deployment"]
+                    
                     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
                         query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
                                                                                                                date_for_filter,
                                                                                                                file_type="audio")
                     else:
-                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES:
+                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_images_or_videos:
                             query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
                                                                                                                     date_for_filter,
                                                                                                                     file_type="image")
                         else:
-                            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
+                            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_images_or_videos:
                                 query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
                                                                                                                        date_for_filter,
                                                                                                                        file_type="video")
