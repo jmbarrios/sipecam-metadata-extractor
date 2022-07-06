@@ -25,7 +25,9 @@ def check_audio_file(filename):
     run_out_cmd_stdout_empty = run_out_cmd.stdout.find(b"empty")
     run_out_cmd_stdout_cancelled = run_out_cmd.stdout.find(b"cancelled")
     run_out_cmd_stdout_binary_zeros = run_out_cmd.stdout.find(b"binary zeros")
-    if run_out_cmd_stdout_empty != -1 or run_out_cmd_stdout_cancelled != -1 or run_out_cmd_stdout_binary_zeros != -1:
+    run_out_cmd_file_format_error = run_out_cmd.stdout.find(b"format error")
+    run_out_cmd_stdout_binary_zeros_ffs = run_out_cmd.stdout.find(b"binary 0xff's")
+    if run_out_cmd_stdout_empty != -1 or run_out_cmd_stdout_cancelled != -1 or run_out_cmd_stdout_binary_zeros != -1 or run_out_cmd_file_format_error != -1 or run_out_cmd_stdout_binary_zeros_ffs != -1:
         dir_pathlib = f_pathlib.parent
         dir_error = os.path.join(dir_pathlib,
                                  "error")

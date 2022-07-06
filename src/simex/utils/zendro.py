@@ -99,6 +99,7 @@ def query_for_move_files_to_standard_directory(serial_number,
                                                                 }
                                                        }
                                                   cumulus {
+                                                      geometry
                                                       name
                                                        }
                                                   date_deployment
@@ -185,6 +186,7 @@ def query_alternative_for_move_files_to_standard_directory(serial_number,
                                                                 }
                                                        }
                                                   cumulus {
+                                                      geometry
                                                       name
                                                        }
                                                   date_deployment
