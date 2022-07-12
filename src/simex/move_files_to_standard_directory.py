@@ -336,7 +336,7 @@ cumulus_name/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JP
 Example usage:
 --------------
 
-move_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/filename.json
+move_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/ --path_for_standard_directory /data/
 
 """
     parser = argparse.ArgumentParser(description=help,
