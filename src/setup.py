@@ -18,7 +18,7 @@ setup(name="simex", version=0.1,
                           "sgqlc==15.0",
                           "hachoir==3.1.2",
                           "PyExifTool==0.4.13",
-                          "shapely"
+                          "shapely==1.8.2"
                           ],
       entry_points = {
           'console_scripts': [
