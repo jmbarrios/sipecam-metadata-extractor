@@ -73,12 +73,12 @@ python3 -mjson.tool "$file_json"|head -n 15
 ```
 
 
-# copy_files_to_standard_directory
+# move_files_to_standard_directory
 
 ```
 dir_to_be_processed="/LUSTRE/sacmod/SIPECAM/Entregas_2021/octubre_2021/SIPECAM/Playon 1338/Camaras/1338_1/100RECNX/"
 path_std_dir="/LUSTRE/users/epalacios/sipecam_simex"
-docker run --rm -v /LUSTRE:/LUSTRE copy_files_to_standard_directory --directory_with_file_of_serial_number_and_dates "$dir_to_be_processed" --path_for_standard_directory "$path_std_dir"
+docker run --rm -v /LUSTRE:/LUSTRE move_files_to_standard_directory --directory_with_file_of_serial_number_and_dates "$dir_to_be_processed" --path_for_standard_directory "$path_std_dir"
 ```
 
 ## check
