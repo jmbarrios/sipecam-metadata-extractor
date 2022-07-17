@@ -254,24 +254,20 @@ def move_files_to_standard_dir(logger,
     lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
     long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
     os.makedirs(standard_dir, exist_ok=True)
-    
     #create dir that will hold new dirs & files moved to standar_dir. Will be a txt file and it's name will
     #have the day when new dirs & files were moved.
     name_dir_for_new_dirs_moved  = "dirs_moved_with_simex"
     name_dir_for_new_files_moved = "files_moved_with_simex"
-    
     path_for_dir_with_txt_of_new_dirs_moved  = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_dirs_moved)
     path_for_dir_with_txt_of_new_files_moved = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_files_moved)
-    
     os.makedirs(path_for_dir_with_txt_of_new_dirs_moved,  exist_ok=True)
     os.makedirs(path_for_dir_with_txt_of_new_files_moved, exist_ok=True)
-    
     path_for_txt_with_new_dirs_moved  = os.path.join(path_for_dir_with_txt_of_new_dirs_moved,
                                                      name_dir_for_new_dirs_moved) + "_" + \
                                                      datetime.date.today().strftime("%d-%m-%Y") + \
-                                                     ".txt"  
+                                                     ".txt"
     path_for_txt_with_new_files_moved = os.path.join(path_for_dir_with_txt_of_new_files_moved,
                                                      name_dir_for_new_files_moved) + "_" + \
                                                      datetime.date.today().strftime("%d-%m-%Y") + \
@@ -413,7 +409,7 @@ def main():
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
     filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
-    
+
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES or filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
         if diff_dates >= 2: #there were a lot of problems for images or videos that had DaysBetweenFirstAndLastDate 0 or 1 as there were erronous files
                             #only images or videos with DaysBetweenFirstAndLastDate >=2 will be incorporated into data standard dir.
@@ -523,7 +519,9 @@ def main():
                             query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
                                                                                                                             file_type="video")
                 logger.info("Query alternative auxiliar to Zendro GQL: %s" % operation_sgqlc)
+                logger.info("Result of query alternative auxiliar to Zendro GQL: %s" % query_result)
                 try:
+                    deployment_date_of_device_found = False #assume there is no interval of deployment dates registered in Zendro Deployment table that contains dates of files
                     device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
                     format_string_data = "%Y-%m-%d"
                     list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter_list]
@@ -536,9 +534,9 @@ def main():
                         return datetime.datetime.strptime(d["date_deployment"].split('T')[0],
                                                           format_string_data)
                     device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
-                    
+
                     MAX_NUMBER_OF_DAYS = 40
-                    
+
                     for k in range(len(list_datetimes_device_deployment) - 1):
                         datetime_device_deployment_1 = list_datetimes_device_deployment[k]
                         datetime_device_deployment_2 = list_datetimes_device_deployment[k+1]
@@ -549,8 +547,14 @@ def main():
                             break
                         else:
                             idx_date = None
+
+                    if not idx_date: #there was no interval of deployment dates registered in Zendro Deployment table that contains dates of files
+                        deployment_date_of_device_found = False
+                    else:
+                        deployment_date_of_device_found = True
+
                     date_for_filter = device_deploymentsFilter_list[idx_date]["date_deployment"]
-                    
+
                     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
                         query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
                                                                                                                date_for_filter,
@@ -633,6 +637,31 @@ def main():
                 except Exception as e:
                     logger.info(e)
                     logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+                    #register which dirs couldn't move
+                    if not deployment_date_of_device_found:
+                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+                            create_txt_of_no_dirs_moved = True
+                        else:
+                            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_images_or_videos:
+                                create_txt_of_no_dirs_moved = True
+                            else:
+                                if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_images_or_videos:
+                                    create_txt_of_no_dirs_moved = True
+                    else:
+                        create_txt_of_no_dirs_moved = False
+
+                    if create_txt_of_no_dirs_moved:
+                        name_dir_for_dirs_not_moved  = "dirs_not_moved_with_simex"
+                        path_for_dir_with_txt_of_no_dirs_moved  = os.path.join(path_for_standard_directory,
+                                                                               name_dir_for_dirs_not_moved)
+                        os.makedirs(path_for_dir_with_txt_of_no_dirs_moved,  exist_ok=True)
+
+                        path_for_txt_with_no_dirs_moved  = os.path.join(path_for_dir_with_txt_of_no_dirs_moved,
+                                                                        name_dir_for_dirs_not_moved) + "_" + \
+                                                                        datetime.date.today().strftime("%d-%m-%Y") + \
+                                                                        ".txt"
+                        with open(path_for_txt_with_no_dirs_moved, "a") as write_dst_no_dirs:
+                            write_dst_no_dirs.write(directory_with_file_of_serial_number_and_dates + "\n")
             else: #len of list is >1 then there's no unique date of deployment of device
                 logger.info("There's no unique date of deployment and can not select one date to create standard directory")
     except Exception as e:
