@@ -667,3 +667,4 @@ def main():
     except Exception as e:
         logger.info(e)
         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+        logger.info("Result of query to Zendro GQL: %s" % query_result)
