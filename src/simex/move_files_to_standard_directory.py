@@ -254,74 +254,86 @@ def move_files_to_standard_dir(logger,
     lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
     long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
     os.makedirs(standard_dir, exist_ok=True)
-    #create dir that will hold new files moved to standar_dir. Will be in txt file and it's name will
-    #have the day when new files are moved.
+    #create dir that will hold new dirs & files moved to standar_dir. Will be a txt file and it's name will
+    #have the day when new dirs & files were moved.
+    name_dir_for_new_dirs_moved  = "dirs_moved_with_simex"
     name_dir_for_new_files_moved = "files_moved_with_simex"
+    path_for_dir_with_txt_of_new_dirs_moved  = os.path.join(path_for_std_dir,
+                                                            name_dir_for_new_dirs_moved)
     path_for_dir_with_txt_of_new_files_moved = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_files_moved)
+    os.makedirs(path_for_dir_with_txt_of_new_dirs_moved,  exist_ok=True)
     os.makedirs(path_for_dir_with_txt_of_new_files_moved, exist_ok=True)
+    path_for_txt_with_new_dirs_moved  = os.path.join(path_for_dir_with_txt_of_new_dirs_moved,
+                                                     name_dir_for_new_dirs_moved) + "_" + \
+                                                     datetime.date.today().strftime("%d-%m-%Y") + \
+                                                     ".txt"
     path_for_txt_with_new_files_moved = os.path.join(path_for_dir_with_txt_of_new_files_moved,
                                                      name_dir_for_new_files_moved) + "_" + \
                                                      datetime.date.today().strftime("%d-%m-%Y") + \
                                                      ".txt"
-    with open(path_for_txt_with_new_files_moved, "a") as write_dst_new_files:
-        write_dst_new_files.write(standard_dir + "\n")
+    with open(path_for_txt_with_new_dirs_moved, "a") as write_dst_new_dirs:
+        write_dst_new_dirs.write(standard_dir + "\n")
 
     iterator = multiple_file_types(src_dir,
                                    SUFFIXES_SIPECAM)
     with open(output_filename, "w") as write_dst:
-        for filename in iterator:
-            f_pathlib = pathlib.Path(filename)
-            f_pathlib_suffix = f_pathlib.suffix
-            filename_md5 = md5_for_file(filename) #md5 will be basename of filename
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                filename_std = "".join([filename_md5,
-                                        f_pathlib_suffix])
-                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
-                                                                           filename_std)
-                           )
-            else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                    filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+        with open(path_for_txt_with_new_files_moved, "a") as write_dst_new_files:
+            for filename in iterator:
+                f_pathlib = pathlib.Path(filename)
+                f_pathlib_suffix = f_pathlib.suffix
+                filename_md5 = md5_for_file(filename) #md5 will be basename of filename
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
                     filename_std = "".join([filename_md5,
-                                            "_",
-                                            filename_number,
                                             f_pathlib_suffix])
                     logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
                                                                                filename_std)
                                )
-            dst_filename = os.path.join(standard_dir, filename_std)
-            #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
-            dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
-                                                                           dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                           d_output_metadatadevice)
-            else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                    extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
-                                              d_output_metadatadevice)
-            if type_files_in_dir == "images" or type_files_in_dir == "videos":
-                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
-                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
-            else:
-                if type_files_in_dir == "audios":
-                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
-                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
-            logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
-            check_files_coords_and_assign_them_to_device_if_necessary(logger,
-                                                                      lat_file,
-                                                                      long_file,
-                                                                      cumulus_poly,
-                                                                      dict_output_metadata["MetadataDevice"],
-                                                                      dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                      type_files_in_dir
-                                                                      )
-            logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
-            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
-            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
-            f_pathlib.rename(dst_filename) #move
-        json.dump(dict_output_metadata, write_dst)
+                else:
+                    if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                        filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+                        filename_std = "".join([filename_md5,
+                                                "_",
+                                                filename_number,
+                                                f_pathlib_suffix])
+                        logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                                   filename_std)
+                                   )
+                dst_filename = os.path.join(standard_dir, filename_std)
+                #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
+                dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                    assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
+                                                                               dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                               d_output_metadatadevice)
+                else:
+                    if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                        extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
+                                                  d_output_metadatadevice)
+                if type_files_in_dir == "images" or type_files_in_dir == "videos":
+                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
+                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
+                else:
+                    if type_files_in_dir == "audios":
+                        lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
+                        long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
+                logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
+                check_files_coords_and_assign_them_to_device_if_necessary(logger,
+                                                                          lat_file,
+                                                                          long_file,
+                                                                          cumulus_poly,
+                                                                          dict_output_metadata["MetadataDevice"],
+                                                                          dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                          type_files_in_dir
+                                                                          )
+                logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
+                dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
+                dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
+                f_pathlib.rename(dst_filename) #move
+                #write standard path for each file in txt
+                write_dst_new_files.write(dst_filename + "\n")
+            #write json with metadata info for all files
+            json.dump(dict_output_metadata, write_dst)
     ######
     ######
     ######End function move_files_to_standard_dir
@@ -336,7 +348,7 @@ cumulus_name/node_nomenclature/date_of_device_deployment/type_of_device/uuid.(JP
 Example usage:
 --------------
 
-move_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/filename.json
+move_files_to_standard_directory --directory_with_file_of_serial_number_and_dates /dir/ --path_for_standard_directory /data/
 
 """
     parser = argparse.ArgumentParser(description=help,
@@ -397,7 +409,7 @@ def main():
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
     filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
-    
+
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES or filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO:
         if diff_dates >= 2: #there were a lot of problems for images or videos that had DaysBetweenFirstAndLastDate 0 or 1 as there were erronous files
                             #only images or videos with DaysBetweenFirstAndLastDate >=2 will be incorporated into data standard dir.
@@ -507,7 +519,9 @@ def main():
                             query_result, operation_sgqlc = query_alternative_auxiliar_for_move_files_to_standard_directory(serial_number,
                                                                                                                             file_type="video")
                 logger.info("Query alternative auxiliar to Zendro GQL: %s" % operation_sgqlc)
+                logger.info("Result of query alternative auxiliar to Zendro GQL: %s" % query_result)
                 try:
+                    deployment_date_of_device_found = False #assume there is no interval of deployment dates registered in Zendro Deployment table that contains dates of files
                     device_deploymentsFilter_list = query_result["data"]["physical_devices"][0]["device_deploymentsFilter"]
                     format_string_data = "%Y-%m-%d"
                     list_dates_device_deployment = [d["date_deployment"].split('T')[0] for d in device_deploymentsFilter_list]
@@ -520,9 +534,9 @@ def main():
                         return datetime.datetime.strptime(d["date_deployment"].split('T')[0],
                                                           format_string_data)
                     device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
-                    
+
                     MAX_NUMBER_OF_DAYS = 40
-                    
+
                     for k in range(len(list_datetimes_device_deployment) - 1):
                         datetime_device_deployment_1 = list_datetimes_device_deployment[k]
                         datetime_device_deployment_2 = list_datetimes_device_deployment[k+1]
@@ -533,8 +547,14 @@ def main():
                             break
                         else:
                             idx_date = None
+
+                    if not idx_date: #there was no interval of deployment dates registered in Zendro Deployment table that contains dates of files
+                        deployment_date_of_device_found = False
+                    else:
+                        deployment_date_of_device_found = True
+
                     date_for_filter = device_deploymentsFilter_list[idx_date]["date_deployment"]
-                    
+
                     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
                         query_result, operation_sgqlc = query_alternative_for_move_files_to_standard_directory(serial_number,
                                                                                                                date_for_filter,
@@ -617,8 +637,34 @@ def main():
                 except Exception as e:
                     logger.info(e)
                     logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+                    #register which dirs couldn't move
+                    if not deployment_date_of_device_found:
+                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO:
+                            create_txt_of_no_dirs_moved = True
+                        else:
+                            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_images_or_videos:
+                                create_txt_of_no_dirs_moved = True
+                            else:
+                                if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_images_or_videos:
+                                    create_txt_of_no_dirs_moved = True
+                    else:
+                        create_txt_of_no_dirs_moved = False
+
+                    if create_txt_of_no_dirs_moved:
+                        name_dir_for_dirs_not_moved  = "dirs_not_moved_with_simex"
+                        path_for_dir_with_txt_of_no_dirs_moved  = os.path.join(path_for_standard_directory,
+                                                                               name_dir_for_dirs_not_moved)
+                        os.makedirs(path_for_dir_with_txt_of_no_dirs_moved,  exist_ok=True)
+
+                        path_for_txt_with_no_dirs_moved  = os.path.join(path_for_dir_with_txt_of_no_dirs_moved,
+                                                                        name_dir_for_dirs_not_moved) + "_" + \
+                                                                        datetime.date.today().strftime("%d-%m-%Y") + \
+                                                                        ".txt"
+                        with open(path_for_txt_with_no_dirs_moved, "a") as write_dst_no_dirs:
+                            write_dst_no_dirs.write(directory_with_file_of_serial_number_and_dates + "\n")
             else: #len of list is >1 then there's no unique date of deployment of device
                 logger.info("There's no unique date of deployment and can not select one date to create standard directory")
     except Exception as e:
         logger.info(e)
         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+        logger.info("Result of query to Zendro GQL: %s" % query_result)

@@ -21,7 +21,8 @@ RUN pip3 install jupyter jupyterlab==$JUPYTERLAB_VERSION --upgrade
 
 RUN jupyter notebook --generate-config && \
     sed -i "s/# c.NotebookApp.password = .*/c.NotebookApp.password = u'sha1:115e429a919f:21911277af52f3e7a8b59380804140d9ef3e2380'/" ~/.jupyter/jupyter_notebook_config.py
-
+#effectively load password and configs
+RUN cp ~/.jupyter/jupyter_notebook_config.py ~/.jupyter/jupyter_server_config.py
 #install exiftool
 
 RUN git clone https://github.com/exiftool/exiftool.git && cd exiftool && perl Makefile.PL && make && make test && make install
