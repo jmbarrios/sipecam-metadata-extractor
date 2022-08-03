@@ -534,7 +534,7 @@ def main():
                                                           format_string_data)
                     device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
 
-                    MAX_NUMBER_OF_DAYS = 40
+                    MAX_NUMBER_OF_DAYS = 60
 
                     for k in range(len(list_datetimes_device_deployment) - 1):
                         datetime_device_deployment_1 = list_datetimes_device_deployment[k]
