@@ -8,7 +8,6 @@ import hashlib
 import re
 
 from shapely.geometry import Point, Polygon
-
 from simex import get_logger_for_writing_logs_to_file
 from simex.utils.zendro import query_for_move_files_to_standard_directory, \
 query_alternative_auxiliar_for_move_files_to_standard_directory, \
