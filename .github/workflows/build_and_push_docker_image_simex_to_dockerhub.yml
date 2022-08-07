@@ -8,7 +8,7 @@ on:
   push:
     branches: [ develop ]
     paths:
-    - dockerfiles/0.2/Dockerfile
+    - dockerfiles/0.3/Dockerfile
     - src/**
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -38,4 +38,4 @@ jobs:
           file: dockerfiles/0.2/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: sipecam/simex:0.2
+          tags: sipecam/simex:0.3
