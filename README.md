@@ -9,7 +9,7 @@
 Ssh to one node of CONABIO cluster as user `madmex_admin`.
 
 ```
-SIMEX_VERSION=0.1
+SIMEX_VERSION=0.3
 REPO_URL=sipecam/simex
 ```
 
