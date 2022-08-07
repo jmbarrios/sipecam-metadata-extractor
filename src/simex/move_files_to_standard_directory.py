@@ -102,9 +102,8 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
     file_with_metadata_updated = os.path.join(standard_dir,
                                               standard_dir_pathlib.name + \
                                               "_simex_metadata_files_and_device_" + \
-                                              datetime.date.today().strftime("%d-%m-%Y") + \
+                                              datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + \
                                               ".json")
-    pathlib.Path(file_with_metadata_updated).unlink(missing_ok=True) #remove in case it exists
     dict_output_metadata["MetadataFiles"] = {}
 
     return (dict_output_metadata,
