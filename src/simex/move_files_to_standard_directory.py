@@ -277,6 +277,67 @@ def return_files_moved_to_their_source_dir(d_mapping_dst_filename_src_filename,
         dst_f_pathlib = pathlib.Path(dst_f)
         dst_f_pathlib.rename(src_f)
 
+def check_file_existence_in_standard_dir(logger,
+                                         std_dir,
+                                         src_dir,
+                                         SUFFIXES,
+                                         dst_f,
+                                         d_mapping_dst_f_src_f,
+                                         f_number,
+                                         type_f_in_dir):
+    """
+    Args:
+        std_dir (str):                standard directory where will be checked if dst_f exists in there
+        src_dir (str):                directory that have source files and json file with serial number and dates.
+        SUFFIXES (list):              suffixes that will be used with dst_f to check if exists in std_dir
+        dst_f (str):                  destiny filename in std_dir
+        d_mapping_dst_f_src_f (dict): dictionary with key dst_filename which is the filename in
+                                      standard_directory already moved and value src_filename
+                                      which is the filename in source.
+        f_number (str):               for images and videos this string is a sequence of numbers, e.g. 0001
+        type_f_in_dir (str):          either one of: audios, images or videos string.
+    Returns:
+        dst_filename_exists (boolean):wether dst_f exists in std_dir
+    """
+    #next variable to verify existence of files in standard_dir
+    dst_filename_exists = False
+    dst_filename_pathlib = pathlib.Path(dst_f)
+    dst_filename_no_suffix = dst_f.split(dst_filename_pathlib.suffix)[0]
+    for suffix in SUFFIXES:
+        filename_to_test_if_exists = dst_filename_no_suffix + suffix
+        filename_to_test_if_exists_pathlib = pathlib.Path(filename_to_test_if_exists)
+        if filename_to_test_if_exists_pathlib.is_file():
+            logger.info("File %s already exists in %s" %(dst_f, std_dir))
+            dst_filename_exists = True
+            logger.info("Performing rollback, returning all files to their source dir")
+            return_files_moved_to_their_source_dir(d_mapping_dst_f_src_f,
+                                                   src_dir)
+            logger.info("halting loop of checking if file exists")
+            break
+        else:
+            if type_f_in_dir == "images" or type_f_in_dir == "videos":
+                filename_number_to_test_existence = f_number + "*"
+                pattern_test_existence            = [filename_number_to_test_existence]
+                iterator_test_existence           = multiple_file_types(std_dir,
+                                                                        pattern_test_existence)
+                list_test_existence               = list(iterator_test_existence)
+                if len(list_test_existence) > 0: #there's a image or video with same number in standard_dir
+                    logger.info("Filenumber of file %s already exists in %s" %(dst_f,
+                                                                               std_dir))
+                    dst_filename_exists = True
+                    logger.info("Performing rollback, returning all files to their source dir")
+                    return_files_moved_to_their_source_dir(d_mapping_dst_f_src_f,
+                                                           src_dir)
+                    logger.info("halting loop of checking if file exists")
+                    break
+                else:
+                    logger.info("File %s doesn't exists in %s, continuing with move cli" %(filename_to_test_if_exists,
+                                                                                         std_dir))
+            else:
+                logger.info("File %s doesn't exists in %s, continuing with move cli" %(filename_to_test_if_exists,
+                                                                                     std_dir))
+    return dst_filename_exists
+
 
 def move_files_to_standard_dir(logger,
                                path_for_std_dir,
@@ -334,12 +395,12 @@ def move_files_to_standard_dir(logger,
                                                      ".txt"
     iterator = multiple_file_types(src_dir,
                                    SUFFIXES_SIPECAM)
-    dst_filename_exists = False
     for filename in iterator:
         f_pathlib = pathlib.Path(filename)
         f_pathlib_suffix = f_pathlib.suffix
         filename_md5 = md5_for_file(filename) #md5 will be basename of filename
         if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+            filename_number = None
             filename_std = "".join([filename_md5,
                                     f_pathlib_suffix])
             logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
@@ -357,22 +418,22 @@ def move_files_to_standard_dir(logger,
                            )
         dst_filename = os.path.join(standard_dir, filename_std)
         #check if if exists dst_filename, if so, do a rollback and halt the program
-        dst_filename_pathlib = pathlib.Path(dst_filename)
-        dst_filename_no_suffix = dst_filename.split(dst_filename_pathlib.suffix)[0]
         if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-            for suffix in SUFFIXES_SIPECAM_AUDIO:
-                filename_to_test_if_exists = dst_filename_no_suffix + suffix
-                filename_to_test_if_exists_pathlib = pathlib.Path(filename_to_test_if_exists)
-                if filename_to_test_if_exists_pathlib.is_file():
-                    logger.info("File %s already exists in %s" %(dst_filename, standard_dir))
-                    dst_filename_exists = True
-                    logger.info("Performing rollback, returning all files to their source dir")
-                    return_files_moved_to_their_source_dir(dict_mapping_dst_filename_src_filename,
-                                                           src_dir)
-                    logger.info("halting loop of checking if file exists")
-                    break
-                else:
-                    logger.info("File %s don't exists in %s, continuing with move cli" %(filename_to_test_if_exists, standard_dir))
+            SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_AUDIO
+        else:
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES:
+                SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_IMAGES
+            else:
+                if f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
+                    SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_VIDEO
+        dst_filename_exists = check_file_existence_in_standard_dir(logger,
+                                                                   standard_dir,
+                                                                   src_dir,
+                                                                   SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE,
+                                                                   dst_filename,
+                                                                   dict_mapping_dst_filename_src_filename,
+                                                                   filename_number,
+                                                                   type_files_in_dir)
         if dst_filename_exists:
             logger.info("halting loop of moving files")
             break
@@ -380,12 +441,12 @@ def move_files_to_standard_dir(logger,
             dict_mapping_dst_filename_src_filename[dst_filename] = filename
             #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
             dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+            if type_files_in_dir == "images" or type_files_in_dir == "videos":
                 assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
                                                                            dict_output_metadata["MetadataFiles"][dst_filename],
                                                                            d_output_metadatadevice)
             else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+                if type_files_in_dir == "audios":
                     extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
                                               d_output_metadatadevice)
             if type_files_in_dir == "images" or type_files_in_dir == "videos":
@@ -427,9 +488,7 @@ def move_files_to_standard_dir(logger,
     else:
         standard_dir = ""
     return standard_dir
-    ######
-    ######
-    ######End function move_files_to_standard_dir
+
 
 def arguments_parse():
     help = """
