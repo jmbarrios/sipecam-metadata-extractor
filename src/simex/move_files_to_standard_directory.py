@@ -227,6 +227,57 @@ def check_files_coords_and_assign_them_to_device_if_necessary(logger,
             d_metadatafiles_for_file["Latitude"]  = lat_file
             d_metadatafiles_for_file["Longitude"] = long_file
 
+def register_dir_that_couldnt_move(dep_date_of_dev_found,
+                                   fname_source_first_date_pathlib,
+                                   move_files,
+                                   path_for_std_directory,
+                                   src_dir):
+    """
+    Auxiliar function to register directory src_dir that couldn't move to path_for_std_directory
+    Args:
+        dep_date_of_dev_found (boolean): wether queries to Zendro were succesful or not
+        fname_source_first_date_pathlib (instance of pathlib class): help to find suffix of filename
+        move_files (boolean):            wether to move files if conditions in main function are met
+        path_for_std_directory (str):    path where files were going to moved
+        src_dir (str):                   directory that have source files and json file with serial number and dates.
+    """
+    #register which dirs couldn't move
+    if not dep_date_of_dev_found:
+        if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO and move_files:
+            create_txt_of_no_dirs_moved = True
+        else:
+            if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_files:
+                create_txt_of_no_dirs_moved = True
+            else:
+                if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_files:
+                    create_txt_of_no_dirs_moved = True
+    else:
+        create_txt_of_no_dirs_moved = False
+    if create_txt_of_no_dirs_moved:
+        name_dir_for_dirs_not_moved  = "dirs_not_moved_with_simex"
+        path_for_dir_with_txt_of_no_dirs_moved  = os.path.join(path_for_std_directory,
+                                                               name_dir_for_dirs_not_moved)
+        os.makedirs(path_for_dir_with_txt_of_no_dirs_moved,  exist_ok=True)
+        path_for_txt_with_no_dirs_moved  = os.path.join(path_for_dir_with_txt_of_no_dirs_moved,
+                                                        name_dir_for_dirs_not_moved) + "_" + \
+                                                        datetime.date.today().strftime("%d-%m-%Y") + \
+                                                        ".txt"
+        with open(path_for_txt_with_no_dirs_moved, "a") as write_dst_no_dirs:
+            write_dst_no_dirs.write(src_dir + "\n")
+
+def return_files_moved_to_their_source_dir(d_mapping_dst_filename_src_filename,
+                                           src_dir):
+    """
+    d_mapping_dst_filename_src_filename (dict): dictionary with key dst_filename which is the filename in
+                                                standard_directory already moved and value src_filename
+                                                which is the filename in source.
+    src_dir (str): directory that have source files and json file with serial number and dates.
+    """
+    for dst_f, src_f in d_mapping_dst_filename_src_filename.items():
+        dst_f_pathlib = pathlib.Path(dst_f)
+        dst_f_pathlib.rename(src_f)
+
+
 def move_files_to_standard_dir(logger,
                                path_for_std_dir,
                                src_dir,
@@ -236,16 +287,30 @@ def move_files_to_standard_dir(logger,
                                cumulus_poly,
                                type_files_in_dir):
     """
-    Move files from source directory to destiny directory, both given in standard input from this cli (move_files).
-    dst_dir will hold standard directory. Prepends already built (cumulus name, nomenclature of node,
-    date of deployment for example). Specifications of standard dir are built (if audio then use Ultrasonico or
-    Audible names for instance) in this function.
-    d_source is a dictionary with info from extract cli simex (executed in a previous step before this cli).
-    d_output_metadatadevice is a dictionary with device metadata info which has info from extract cli
-    simex (executed in a previous step before this cli) and Zendro info extracted in this cli (move_files).
+    Move files from source directory to destiny directory, both given in standard input of this cli (move_files).
     Will be used for filling d_source.
+    Args:
+        path_for_std_dir (str):         auxiliar path that will be used to build standard_dir (what will be
+                                        returned with this function).
+        src_dir (str):                  directory that have source files and json file with serial number and dates.
+        dst_dir (str):                  will hold standard directory.
+                                        Prepends already built (cumulus name, nomenclature of node,
+                                        date of deployment for example).
+                                        Specifications of standard dir are built (if audio then use Ultrasonico or
+                                        Audible names for instance) in this function.
+        d_source (dict):                dictionary with info from extract cli simex (executed in a
+                                        previous step before this cli).
+        d_output_metadatadevice (dict): dictionary with device metadata info which has info from extract cli
+                                        simex (executed in a previous step before this cli) and Zendro info
+                                        extracted in this cli (move_files).
+        cumulus_poly (geom shapely):    Polygon shapely of cumulus to check wether coordinates are in the cumulus.
+        type_files_in_dir (str):        either one of: audios, images or videos string.
+    Returns:
+        standard_dir (str):             path where files are moved
     """
-
+    #next dict will be build in case we want to do a rollback
+    dict_mapping_dst_filename_src_filename = {}
+    #get important variables for moving files
     dict_output_metadata, standard_dir, output_filename = get_output_dict_std_dir_and_json_file(dst_dir,
                                                                                                 d_source,
                                                                                                 d_output_metadatadevice,
@@ -256,83 +321,112 @@ def move_files_to_standard_dir(logger,
     #create dir that will hold new dirs & files moved to standar_dir. Will be a txt file and it's name will
     #have the day when new dirs & files were moved.
     name_dir_for_new_dirs_moved  = "dirs_moved_with_simex"
-    name_dir_for_new_files_moved = "files_moved_with_simex"
     path_for_dir_with_txt_of_new_dirs_moved  = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_dirs_moved)
+    os.makedirs(path_for_dir_with_txt_of_new_dirs_moved,  exist_ok=True)
+    name_dir_for_new_files_moved = "files_moved_with_simex"
     path_for_dir_with_txt_of_new_files_moved = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_files_moved)
-    os.makedirs(path_for_dir_with_txt_of_new_dirs_moved,  exist_ok=True)
     os.makedirs(path_for_dir_with_txt_of_new_files_moved, exist_ok=True)
-    path_for_txt_with_new_dirs_moved  = os.path.join(path_for_dir_with_txt_of_new_dirs_moved,
-                                                     name_dir_for_new_dirs_moved) + "_" + \
-                                                     datetime.date.today().strftime("%d-%m-%Y") + \
-                                                     ".txt"
     path_for_txt_with_new_files_moved = os.path.join(path_for_dir_with_txt_of_new_files_moved,
                                                      name_dir_for_new_files_moved) + "_" + \
                                                      datetime.date.today().strftime("%d-%m-%Y") + \
                                                      ".txt"
-    with open(path_for_txt_with_new_dirs_moved, "a") as write_dst_new_dirs:
-        write_dst_new_dirs.write(standard_dir + "\n")
-
     iterator = multiple_file_types(src_dir,
                                    SUFFIXES_SIPECAM)
-    with open(output_filename, "w") as write_dst:
-        with open(path_for_txt_with_new_files_moved, "a") as write_dst_new_files:
-            for filename in iterator:
-                f_pathlib = pathlib.Path(filename)
-                f_pathlib_suffix = f_pathlib.suffix
-                filename_md5 = md5_for_file(filename) #md5 will be basename of filename
+    dst_filename_exists = False
+    for filename in iterator:
+        f_pathlib = pathlib.Path(filename)
+        f_pathlib_suffix = f_pathlib.suffix
+        filename_md5 = md5_for_file(filename) #md5 will be basename of filename
+        if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+            filename_std = "".join([filename_md5,
+                                    f_pathlib_suffix])
+            logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                       filename_std)
+                       )
+        else:
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
+                filename_std = "".join([filename_md5,
+                                        "_",
+                                        filename_number,
+                                        f_pathlib_suffix])
+                logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
+                                                                           filename_std)
+                           )
+        dst_filename = os.path.join(standard_dir, filename_std)
+        #check if if exists dst_filename, if so, do a rollback and halt the program
+        dst_filename_pathlib = pathlib.Path(dst_filename)
+        dst_filename_no_suffix = dst_filename.split(dst_filename_pathlib.suffix)[0]
+        if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
+            for suffix in SUFFIXES_SIPECAM_AUDIO:
+                filename_to_test_if_exists = dst_filename_no_suffix + suffix
+                filename_to_test_if_exists_pathlib = pathlib.Path(filename_to_test_if_exists)
+                if filename_to_test_if_exists_pathlib.is_file():
+                    logger.info("File %s already exists in %s" %(dst_filename, standard_dir))
+                    dst_filename_exists = True
+                    logger.info("Performing rollback, returning all files to their source dir")
+                    return_files_moved_to_their_source_dir(dict_mapping_dst_filename_src_filename,
+                                                           src_dir)
+                    logger.info("halting loop of checking if file exists")
+                    break
+                else:
+                    logger.info("File %s don't exists in %s, continuing with move cli" %(filename_to_test_if_exists, standard_dir))
+        if dst_filename_exists:
+            logger.info("halting loop of moving files")
+            break
+        if not dst_filename_exists:
+            dict_mapping_dst_filename_src_filename[dst_filename] = filename
+            #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
+            dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
+                                                                           dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                           d_output_metadatadevice)
+            else:
                 if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                    filename_std = "".join([filename_md5,
-                                            f_pathlib_suffix])
-                    logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
-                                                                               filename_std)
-                               )
-                else:
-                    if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                        filename_number = re.findall("([0-9]{1,}).[JPG|AVI]", f_pathlib.name)[0] #get 0074 of RCNX0074.JPG
-                        filename_std = "".join([filename_md5,
-                                                "_",
-                                                filename_number,
-                                                f_pathlib_suffix])
-                        logger.info("File %s will be moved to: %s with name %s" % (filename, standard_dir,
-                                                                                   filename_std)
-                                   )
-                dst_filename = os.path.join(standard_dir, filename_std)
-                #fill dict_output_metadata["MetadataFiles"] with d_source["MetadataFiles"]
-                dict_output_metadata["MetadataFiles"][dst_filename] = d_source["MetadataFiles"][filename]
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
-                    assign_gps_info_of_device_to_metadata_of_images_and_videos(logger,
-                                                                               dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                               d_output_metadatadevice)
-                else:
-                    if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
-                        extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
-                                                  d_output_metadatadevice)
-                if type_files_in_dir == "images" or type_files_in_dir == "videos":
-                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
-                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
-                else:
-                    if type_files_in_dir == "audios":
-                        lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
-                        long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
-                logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
-                check_files_coords_and_assign_them_to_device_if_necessary(logger,
-                                                                          lat_file,
-                                                                          long_file,
-                                                                          cumulus_poly,
-                                                                          dict_output_metadata["MetadataDevice"],
-                                                                          dict_output_metadata["MetadataFiles"][dst_filename],
-                                                                          type_files_in_dir
-                                                                          )
-                logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
-                dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
-                dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
-                f_pathlib.rename(dst_filename) #move
-                #write standard path for each file in txt
-                write_dst_new_files.write(dst_filename + "\n")
-            #write json with metadata info for all files
+                    extend_metadata_of_audios(dict_output_metadata["MetadataFiles"][dst_filename],
+                                              d_output_metadatadevice)
+            if type_files_in_dir == "images" or type_files_in_dir == "videos":
+                lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLatitude"]
+                long_file = dict_output_metadata["MetadataFiles"][dst_filename]["GPSLongitude"]
+            else:
+                if type_files_in_dir == "audios":
+                    lat_file  = dict_output_metadata["MetadataFiles"][dst_filename]["Latitude"]
+                    long_file = dict_output_metadata["MetadataFiles"][dst_filename]["Longitude"]
+            logger.info("Validating lat and long of file are correct using lat long of cumulus centroid")
+            check_files_coords_and_assign_them_to_device_if_necessary(logger,
+                                                                      lat_file,
+                                                                      long_file,
+                                                                      cumulus_poly,
+                                                                      dict_output_metadata["MetadataDevice"],
+                                                                      dict_output_metadata["MetadataFiles"][dst_filename],
+                                                                      type_files_in_dir
+                                                                      )
+            logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
+            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
+            dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
+            f_pathlib.rename(dst_filename) #move
+
+    if not dst_filename_exists:
+        path_for_txt_with_new_dirs_moved  = os.path.join(path_for_dir_with_txt_of_new_dirs_moved,
+                                                         name_dir_for_new_dirs_moved) + "_" + \
+                                                         datetime.date.today().strftime("%d-%m-%Y") + \
+                                                         ".txt"
+        #write standard_dir in txt
+        with open(path_for_txt_with_new_dirs_moved, "a") as write_dst_new_dirs:
+            write_dst_new_dirs.write(standard_dir + "\n")
+        #write standard path for each file in txt
+        with open(path_for_txt_with_new_files_moved, "a") as write_dst_new_files:
+            for dst_f, src_f in dict_mapping_dst_filename_src_filename.items():
+                write_dst_new_files.write(dst_f + "\n")
+        #write json with metadata info for all files
+        with open(output_filename, "w") as write_dst:
             json.dump(dict_output_metadata, write_dst)
+    else:
+        standard_dir = ""
+    return standard_dir
     ######
     ######
     ######End function move_files_to_standard_dir
@@ -368,7 +462,8 @@ def main():
     args = arguments_parse()
     directory_with_file_of_serial_number_and_dates = args.directory_with_file_of_serial_number_and_dates
     path_for_standard_directory = args.path_for_standard_directory
-    filename_for_logs = "logs_simex_move_files_to_standard_directory"
+    filename_for_logs = "logs_simex_move_files_to_standard_directory_" + \
+                        datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     logger = get_logger_for_writing_logs_to_file(directory_with_file_of_serial_number_and_dates,
                                                  filename_for_logs)
     input_directory_purepath = pathlib.PurePath(directory_with_file_of_serial_number_and_dates).name
@@ -408,15 +503,18 @@ def main():
     logger.info("DaysBetweenFirstAndLastDate: %s" % diff_dates)
 
     filename_source_first_date_pathlib = pathlib.Path(filename_source_first_date)
-
-    if diff_dates >= 2: #there were a lot of problems for images or videos that had DaysBetweenFirstAndLastDate 0 or 1 as there were erronous files
-                        #only files with DaysBetweenFirstAndLastDate >=2 will be incorporated into data standard dir.
+    MIN_NUMBER_OF_DAYS = 2
+    MAX_NUMBER_OF_DAYS = 60
+    #there were a lot of problems for images or videos that had DaysBetweenFirstAndLastDate 0 or 1 as there were erronous files
+    #only files with DaysBetweenFirstAndLastDate >=2 will be incorporated into data standard dir.
+    #there were a lot of problems for audios that had DaysBetweenFirstAndLastDate>= 60
+    if diff_dates >= MIN_NUMBER_OF_DAYS and diff_dates <= MAX_NUMBER_OF_DAYS:
         move_files = True
     else:
         move_files = False
         query_result          = None
         operation_sgqlc       = None
-        logger.info("There were images or videos in %s dir that have DaysBetweenFirstAndLastDate < 2, will not be moved", directory_with_file_of_serial_number_and_dates)
+        logger.info("There were images or videos in %s dir that have DaysBetweenFirstAndLastDate < %s or DaysBetweenFirstAndLastDate > %s, will not be moved" % (directory_with_file_of_serial_number_and_dates, MIN_NUMBER_OF_DAYS, MAX_NUMBER_OF_DAYS))
 
     #make query assuming first_date_str is less than date of deployment of device
     if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO and move_files:
@@ -494,14 +592,25 @@ def main():
                                                 serial_number,
                                                 date_of_deployment)
             logger.info("path where files will be moved: %s" % path_for_files_moved)
-            move_files_to_standard_dir(logger,
-                                       path_for_standard_directory,
-                                       directory_with_file_of_serial_number_and_dates,
-                                       path_for_files_moved,
-                                       dict_source,
-                                       dict_output_metadatadevice,
-                                       cumulus_poly,
-                                       type_files_in_dir)
+            standard_directory = move_files_to_standard_dir(logger,
+                                                            path_for_standard_directory,
+                                                            directory_with_file_of_serial_number_and_dates,
+                                                            path_for_files_moved,
+                                                            dict_source,
+                                                            dict_output_metadatadevice,
+                                                            cumulus_poly,
+                                                            type_files_in_dir)
+            if not standard_directory:
+                register_dir_that_couldnt_move(deployment_date_of_device_found,
+                                               filename_source_first_date_pathlib,
+                                               move_files,
+                                               path_for_standard_directory,
+                                               directory_with_file_of_serial_number_and_dates)
+            else:
+                logger.info("copying logs of move cli to %s", standard_directory)
+                path_filename_for_logs = os.path.join(directory_with_file_of_serial_number_and_dates,
+                                                  filename_for_logs + ".logs")
+                shutil.copy(path_filename_for_logs , standard_directory)
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
                 logger.info("last query wasn't successful")
@@ -532,8 +641,6 @@ def main():
                         return datetime.datetime.strptime(d["date_deployment"].split('T')[0],
                                                           format_string_data)
                     device_deploymentsFilter_list.sort(key=get_date_of_device_deploymentsFilter_list)
-
-                    MAX_NUMBER_OF_DAYS = 60
 
                     for k in range(len(list_datetimes_device_deployment) - 1):
                         datetime_device_deployment_1 = list_datetimes_device_deployment[k]
@@ -621,45 +728,36 @@ def main():
                                                                 serial_number,
                                                                 date_of_deployment)
                             logger.info("path where files will be moved: %s" % path_for_files_moved)
-                            move_files_to_standard_dir(logger,
-                                                       path_for_standard_directory,
-                                                       directory_with_file_of_serial_number_and_dates,
-                                                       path_for_files_moved,
-                                                       dict_source,
-                                                       dict_output_metadatadevice,
-                                                       cumulus_poly,
-                                                       type_files_in_dir)
+                            standard_directory = move_files_to_standard_dir(logger,
+                                                                            path_for_standard_directory,
+                                                                            directory_with_file_of_serial_number_and_dates,
+                                                                            path_for_files_moved,
+                                                                            dict_source,
+                                                                            dict_output_metadatadevice,
+                                                                            cumulus_poly,
+                                                                            type_files_in_dir)
+                            if not standard_directory:
+                                register_dir_that_couldnt_move(deployment_date_of_device_found,
+                                                               filename_source_first_date_pathlib,
+                                                               move_files,
+                                                               path_for_standard_directory,
+                                                               directory_with_file_of_serial_number_and_dates)
+                            else:
+                                logger.info("copying logs of move cli to %s", standard_directory)
+                                path_filename_for_logs = os.path.join(directory_with_file_of_serial_number_and_dates,
+                                                                  filename_for_logs + ".logs")
+                                shutil.copy(path_filename_for_logs , standard_directory)
                     except Exception as e:
                         logger.info(e)
                         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
                 except Exception as e:
                     logger.info(e)
                     logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
-                    #register which dirs couldn't move
-                    if not deployment_date_of_device_found:
-                        if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO and move_files:
-                            create_txt_of_no_dirs_moved = True
-                        else:
-                            if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_files:
-                                create_txt_of_no_dirs_moved = True
-                            else:
-                                if filename_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_files:
-                                    create_txt_of_no_dirs_moved = True
-                    else:
-                        create_txt_of_no_dirs_moved = False
-
-                    if create_txt_of_no_dirs_moved:
-                        name_dir_for_dirs_not_moved  = "dirs_not_moved_with_simex"
-                        path_for_dir_with_txt_of_no_dirs_moved  = os.path.join(path_for_standard_directory,
-                                                                               name_dir_for_dirs_not_moved)
-                        os.makedirs(path_for_dir_with_txt_of_no_dirs_moved,  exist_ok=True)
-
-                        path_for_txt_with_no_dirs_moved  = os.path.join(path_for_dir_with_txt_of_no_dirs_moved,
-                                                                        name_dir_for_dirs_not_moved) + "_" + \
-                                                                        datetime.date.today().strftime("%d-%m-%Y") + \
-                                                                        ".txt"
-                        with open(path_for_txt_with_no_dirs_moved, "a") as write_dst_no_dirs:
-                            write_dst_no_dirs.write(directory_with_file_of_serial_number_and_dates + "\n")
+                    register_dir_that_couldnt_move(deployment_date_of_device_found,
+                                                   filename_source_first_date_pathlib,
+                                                   move_files,
+                                                   path_for_standard_directory,
+                                                   directory_with_file_of_serial_number_and_dates)
             else: #len of list is >1 then there's no unique date of deployment of device
                 logger.info("There's no unique date of deployment and can not select one date to create standard directory")
     except Exception as e:
