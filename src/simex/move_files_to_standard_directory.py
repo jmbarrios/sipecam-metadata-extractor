@@ -378,7 +378,6 @@ def move_files_to_standard_dir(logger,
                                                                                                 type_files_in_dir)
     lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
     long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
-    os.makedirs(standard_dir, exist_ok=True)
     #create dir that will hold new dirs & files moved to standar_dir. Will be a txt file and it's name will
     #have the day when new dirs & files were moved.
     name_dir_for_new_dirs_moved  = "dirs_moved_with_simex"
@@ -809,6 +808,11 @@ def main():
                     except Exception as e:
                         logger.info(e)
                         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+                        register_dir_that_couldnt_move(deployment_date_of_device_found,
+                                                       filename_source_first_date_pathlib,
+                                                       move_files,
+                                                       path_for_standard_directory,
+                                                       directory_with_file_of_serial_number_and_dates)
                 except Exception as e:
                     logger.info(e)
                     logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
