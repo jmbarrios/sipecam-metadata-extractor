@@ -810,7 +810,17 @@ def main():
                                                    directory_with_file_of_serial_number_and_dates)
             else: #len of list is >1 then there's no unique date of deployment of device
                 logger.info("There's no unique date of deployment and can not select one date to create standard directory")
+                logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                register_dir_that_couldnt_move(filename_source_first_date_pathlib,
+                                               move_files,
+                                               path_for_standard_directory,
+                                               directory_with_file_of_serial_number_and_dates)
     except Exception as e:
         logger.info(e)
         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
         logger.info("Result of query to Zendro GQL: %s" % query_result)
+        logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+        register_dir_that_couldnt_move(filename_source_first_date_pathlib,
+                                       move_files,
+                                       path_for_standard_directory,
+                                       directory_with_file_of_serial_number_and_dates)
