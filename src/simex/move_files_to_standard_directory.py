@@ -70,10 +70,13 @@ def fill_metadata_of_device_with_query_results(d_source,
 def get_output_dict_std_dir_and_json_file(dst_dir,
                                           d_source,
                                           d_output_metadatadevice,
-                                          type_files_in_dir):
+                                          type_files_in_dir,
+                                          dry_run):
     """
     Returns dictionary that will be used to fill json file, also will be returned and
     standard directory where files will be moved.
+    Args:
+        dry_run (bool): if true then don't move anything
     """
     dict_output_metadata  = {}
     dict_output_metadata["DaysBetweenFirstAndLastDate"] = d_source["DaysBetweenFirstAndLastDate"]
@@ -98,7 +101,8 @@ def get_output_dict_std_dir_and_json_file(dst_dir,
                                         "images_videos")
 
     standard_dir_pathlib = pathlib.Path(standard_dir)
-    os.makedirs(standard_dir, exist_ok=True)
+    if not dry_run:
+        os.makedirs(standard_dir, exist_ok=True)
     file_with_metadata_updated = os.path.join(standard_dir,
                                               standard_dir_pathlib.name + \
                                               "_simex_metadata_files_and_device_" + \
@@ -273,7 +277,8 @@ def check_file_existence_in_standard_dir(logger,
                                          dst_f,
                                          d_mapping_dst_f_src_f,
                                          f_number,
-                                         type_f_in_dir):
+                                         type_f_in_dir,
+                                         dry_run):
     """
     Args:
         std_dir (str):                standard directory where will be checked if dst_f exists in there
@@ -285,6 +290,7 @@ def check_file_existence_in_standard_dir(logger,
                                       which is the filename in source.
         f_number (str):               for images and videos this string is a sequence of numbers, e.g. 0001
         type_f_in_dir (str):          either one of: audios, images or videos string.
+        dry_run (bool):               if true then don't move anything
     Returns:
         dst_filename_exists (boolean):wether dst_f exists in std_dir
     """
@@ -298,9 +304,10 @@ def check_file_existence_in_standard_dir(logger,
         if filename_to_test_if_exists_pathlib.is_file():
             logger.info("File %s already exists in %s" %(dst_f, std_dir))
             dst_filename_exists = True
-            logger.info("Performing rollback, returning all files to their source dir")
-            return_files_moved_to_their_source_dir(d_mapping_dst_f_src_f,
-                                                   src_dir)
+            if not dry_run:
+                logger.info("Performing rollback, returning all files to their source dir")
+                return_files_moved_to_their_source_dir(d_mapping_dst_f_src_f,
+                                                       src_dir)
             logger.info("halting loop of checking if file exists")
             break
         else:
@@ -314,9 +321,10 @@ def check_file_existence_in_standard_dir(logger,
                     logger.info("Filenumber of file %s already exists in %s" %(dst_f,
                                                                                std_dir))
                     dst_filename_exists = True
-                    logger.info("Performing rollback, returning all files to their source dir")
-                    return_files_moved_to_their_source_dir(d_mapping_dst_f_src_f,
-                                                           src_dir)
+                    if not dry_run:
+                        logger.info("Performing rollback, returning all files to their source dir")
+                        return_files_moved_to_their_source_dir(d_mapping_dst_f_src_f,
+                                                               src_dir)
                     logger.info("halting loop of checking if file exists")
                     break
                 else:
@@ -335,7 +343,8 @@ def move_files_to_standard_dir(logger,
                                d_source,
                                d_output_metadatadevice,
                                cumulus_poly,
-                               type_files_in_dir):
+                               type_files_in_dir,
+                               dry_run):
     """
     Move files from source directory to destiny directory, both given in standard input of this cli (move_files).
     Will be used for filling d_source.
@@ -355,6 +364,7 @@ def move_files_to_standard_dir(logger,
                                         extracted in this cli (move_files).
         cumulus_poly (geom shapely):    Polygon shapely of cumulus to check wether coordinates are in the cumulus.
         type_files_in_dir (str):        either one of: audios, images or videos string.
+        dry_run (bool):                 if true then don't move anything
     Returns:
         standard_dir (str):             path where files are moved
     """
@@ -364,7 +374,8 @@ def move_files_to_standard_dir(logger,
     dict_output_metadata, standard_dir, output_filename = get_output_dict_std_dir_and_json_file(dst_dir,
                                                                                                 d_source,
                                                                                                 d_output_metadatadevice,
-                                                                                                type_files_in_dir)
+                                                                                                type_files_in_dir,
+                                                                                                dry_run)
     lat_centroid_cumulus  = dict_output_metadata["MetadataDevice"]["CentroidCumulusLatitude"]
     long_centroid_cumulus = dict_output_metadata["MetadataDevice"]["CentroidCumulusLongitude"]
     #create dir that will hold new dirs & files moved to standar_dir. Will be a txt file and it's name will
@@ -372,11 +383,13 @@ def move_files_to_standard_dir(logger,
     name_dir_for_new_dirs_moved  = "dirs_moved_with_simex"
     path_for_dir_with_txt_of_new_dirs_moved  = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_dirs_moved)
-    os.makedirs(path_for_dir_with_txt_of_new_dirs_moved,  exist_ok=True)
+    if not dry_run:
+        os.makedirs(path_for_dir_with_txt_of_new_dirs_moved,  exist_ok=True)
     name_dir_for_new_files_moved = "files_moved_with_simex"
     path_for_dir_with_txt_of_new_files_moved = os.path.join(path_for_std_dir,
                                                             name_dir_for_new_files_moved)
-    os.makedirs(path_for_dir_with_txt_of_new_files_moved, exist_ok=True)
+    if not dry_run:
+        os.makedirs(path_for_dir_with_txt_of_new_files_moved, exist_ok=True)
     path_for_txt_with_new_files_moved = os.path.join(path_for_dir_with_txt_of_new_files_moved,
                                                      name_dir_for_new_files_moved) + "_" + \
                                                      datetime.date.today().strftime("%d-%m-%Y") + \
@@ -418,7 +431,8 @@ def move_files_to_standard_dir(logger,
                                                                    dst_filename,
                                                                    dict_mapping_dst_filename_src_filename,
                                                                    filename_number,
-                                                                   type_files_in_dir)
+                                                                   type_files_in_dir,
+                                                                   dry_run)
         if dst_filename_exists:
             logger.info("halting loop of moving files")
             break
@@ -453,9 +467,10 @@ def move_files_to_standard_dir(logger,
             logger.info("Writing lat long of centroid of cumulus for MetadataFiles")
             dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLatitude"]  = lat_centroid_cumulus
             dict_output_metadata["MetadataFiles"][dst_filename]["CentroidCumulusLongitude"] = long_centroid_cumulus
-            f_pathlib.rename(dst_filename) #move
+            if not dry_run:
+                f_pathlib.rename(dst_filename) #move
 
-    if not dst_filename_exists:
+    if not dst_filename_exists and not dry_run:
         path_for_txt_with_new_dirs_moved  = os.path.join(path_for_dir_with_txt_of_new_dirs_moved,
                                                          name_dir_for_new_dirs_moved) + "_" + \
                                                          datetime.date.today().strftime("%d-%m-%Y") + \
@@ -498,6 +513,9 @@ move_files_to_standard_directory --directory_with_file_of_serial_number_and_date
                         required=True,
                         default=None,
                         help="Standard directory that will have files moved")
+    parser.add_argument('--dry_run',
+                        action='store_true',
+                        help="Just show which files will going to be moved but don't do it")
     args = parser.parse_args()
     return args
 
@@ -506,6 +524,7 @@ def main():
     args = arguments_parse()
     directory_with_file_of_serial_number_and_dates = args.directory_with_file_of_serial_number_and_dates
     path_for_standard_directory = args.path_for_standard_directory
+    dry_run = args.dry_run
     filename_for_logs = "logs_simex_move_files_to_standard_directory_" + \
                         datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     logger = get_logger_for_writing_logs_to_file(directory_with_file_of_serial_number_and_dates,
@@ -514,7 +533,8 @@ def main():
     file_with_serial_number_and_dates = os.path.join(directory_with_file_of_serial_number_and_dates,
                                                      input_directory_purepath) + \
                                                      "_simex_extract_serial_numbers_dates_and_metadata_of_files_and_device.json"
-
+    if dry_run:
+        logger.info("Running in dry_run mode, will not move any files, just show cli functionality")
     with open(file_with_serial_number_and_dates, 'r') as f:
         dict_source = json.load(f)
 
@@ -643,18 +663,21 @@ def main():
                                                             dict_source,
                                                             dict_output_metadatadevice,
                                                             cumulus_poly,
-                                                            type_files_in_dir)
+                                                            type_files_in_dir,
+                                                            dry_run)
             if not standard_directory:
-                logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
-                register_dir_that_couldnt_move(filename_source_first_date_pathlib,
-                                               move_files,
-                                               path_for_standard_directory,
-                                               directory_with_file_of_serial_number_and_dates)
+                if not dry_run:
+                    logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                    register_dir_that_couldnt_move(filename_source_first_date_pathlib,
+                                                   move_files,
+                                                   path_for_standard_directory,
+                                                   directory_with_file_of_serial_number_and_dates)
             else:
-                logger.info("copying logs of move cli to %s", standard_directory)
-                path_filename_for_logs = os.path.join(directory_with_file_of_serial_number_and_dates,
-                                                  filename_for_logs + ".logs")
-                shutil.copy(path_filename_for_logs , standard_directory)
+                if not dry_run:
+                    logger.info("copying logs of move cli to %s", standard_directory)
+                    path_filename_for_logs = os.path.join(directory_with_file_of_serial_number_and_dates,
+                                                      filename_for_logs + ".logs")
+                    shutil.copy(path_filename_for_logs , standard_directory)
         else:
             if len(device_deploymentsFilter_list) == 0: #make another query as first_date_str could be greater than date of deployment of device
                 logger.info("last query wasn't successful")
@@ -780,47 +803,54 @@ def main():
                                                                             dict_source,
                                                                             dict_output_metadatadevice,
                                                                             cumulus_poly,
-                                                                            type_files_in_dir)
+                                                                            type_files_in_dir,
+                                                                            dry_run)
                             if not standard_directory:
-                                logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
-                                register_dir_that_couldnt_move(filename_source_first_date_pathlib,
-                                                               move_files,
-                                                               path_for_standard_directory,
-                                                               directory_with_file_of_serial_number_and_dates)
+                                if not dry_run:
+                                    logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                                    register_dir_that_couldnt_move(filename_source_first_date_pathlib,
+                                                                   move_files,
+                                                                   path_for_standard_directory,
+                                                                   directory_with_file_of_serial_number_and_dates)
                             else:
-                                logger.info("copying logs of move cli to %s", standard_directory)
-                                path_filename_for_logs = os.path.join(directory_with_file_of_serial_number_and_dates,
-                                                                  filename_for_logs + ".logs")
-                                shutil.copy(path_filename_for_logs , standard_directory)
+                                if not dry_run:
+                                    logger.info("copying logs of move cli to %s", standard_directory)
+                                    path_filename_for_logs = os.path.join(directory_with_file_of_serial_number_and_dates,
+                                                                      filename_for_logs + ".logs")
+                                    shutil.copy(path_filename_for_logs , standard_directory)
                     except Exception as e:
                         logger.info(e)
                         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+                        if not dry_run:
+                            logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                            register_dir_that_couldnt_move(filename_source_first_date_pathlib,
+                                                           move_files,
+                                                           path_for_standard_directory,
+                                                           directory_with_file_of_serial_number_and_dates)
+                except Exception as e:
+                    logger.info(e)
+                    logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+                    if not dry_run:
                         logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
                         register_dir_that_couldnt_move(filename_source_first_date_pathlib,
                                                        move_files,
                                                        path_for_standard_directory,
                                                        directory_with_file_of_serial_number_and_dates)
-                except Exception as e:
-                    logger.info(e)
-                    logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
+            else: #len of list is >1 then there's no unique date of deployment of device
+                logger.info("There's no unique date of deployment and can not select one date to create standard directory")
+                if not dry_run:
                     logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
                     register_dir_that_couldnt_move(filename_source_first_date_pathlib,
                                                    move_files,
                                                    path_for_standard_directory,
                                                    directory_with_file_of_serial_number_and_dates)
-            else: #len of list is >1 then there's no unique date of deployment of device
-                logger.info("There's no unique date of deployment and can not select one date to create standard directory")
-                logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
-                register_dir_that_couldnt_move(filename_source_first_date_pathlib,
-                                               move_files,
-                                               path_for_standard_directory,
-                                               directory_with_file_of_serial_number_and_dates)
     except Exception as e:
         logger.info(e)
         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
         logger.info("Result of query to Zendro GQL: %s" % query_result)
-        logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
-        register_dir_that_couldnt_move(filename_source_first_date_pathlib,
-                                       move_files,
-                                       path_for_standard_directory,
-                                       directory_with_file_of_serial_number_and_dates)
+        if not dry_run:
+            logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+            register_dir_that_couldnt_move(filename_source_first_date_pathlib,
+                                           move_files,
+                                           path_for_standard_directory,
+                                           directory_with_file_of_serial_number_and_dates)
