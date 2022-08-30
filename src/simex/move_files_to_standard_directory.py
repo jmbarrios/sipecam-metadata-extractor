@@ -421,7 +421,6 @@ def move_files_to_standard_dir(logger,
                                                                    type_files_in_dir)
         if dst_filename_exists:
             logger.info("halting loop of moving files")
-            standard_dir = ""
             break
         if not dst_filename_exists:
             dict_mapping_dst_filename_src_filename[dst_filename] = filename
