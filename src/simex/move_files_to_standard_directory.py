@@ -315,7 +315,7 @@ def check_file_existence_in_standard_dir(logger,
             break
         else:
             if type_f_in_dir == "images" or type_f_in_dir == "videos":
-                filename_number_to_test_existence = f_number + "*"
+                filename_number_to_test_existence = "*" + f_number + suffix
                 pattern_test_existence            = [filename_number_to_test_existence]
                 iterator_test_existence           = multiple_file_types(std_dir,
                                                                         pattern_test_existence)
@@ -419,11 +419,8 @@ def move_files_to_standard_dir(logger,
         if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
             SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_AUDIO
         else:
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES:
-                SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_IMAGES
-            else:
-                if f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
-                    SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_VIDEO
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
+                SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_IMAGES + SUFFIXES_SIPECAM_VIDEO
         dst_filename_exists = check_file_existence_in_standard_dir(logger,
                                                                    standard_dir,
                                                                    src_dir,
