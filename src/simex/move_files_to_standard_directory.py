@@ -697,7 +697,7 @@ def main():
                         else:
                             idx_date = None
 
-                    if not idx_date:
+                    if idx_date is None:
                         deployment_date_of_device_found = False
                         logger.info("there was no interval of deployment dates registered in Zendro Deployment table that contains dates of files")
                     else:
