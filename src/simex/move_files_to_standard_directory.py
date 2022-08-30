@@ -226,32 +226,22 @@ def check_files_coords_and_assign_them_to_device_if_necessary(logger,
             d_metadatafiles_for_file["Latitude"]  = lat_file
             d_metadatafiles_for_file["Longitude"] = long_file
 
-def register_dir_that_couldnt_move(dep_date_of_dev_found,
-                                   fname_source_first_date_pathlib,
+def register_dir_that_couldnt_move(fname_source_first_date_pathlib,
                                    move_files,
                                    path_for_std_directory,
                                    src_dir):
     """
     Auxiliar function to register directory src_dir that couldn't move to path_for_std_directory
     Args:
-        dep_date_of_dev_found (boolean): wether queries to Zendro were succesful or not
         fname_source_first_date_pathlib (instance of pathlib class): help to find suffix of filename
         move_files (boolean):            wether to move files if conditions in main function are met
         path_for_std_directory (str):    path where files were going to moved
         src_dir (str):                   directory that have source files and json file with serial number and dates.
     """
     #register which dirs couldn't move
-    if not dep_date_of_dev_found:
-        if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_AUDIO and move_files:
-            create_txt_of_no_dirs_moved = True
-        else:
-            if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_IMAGES and move_files:
-                create_txt_of_no_dirs_moved = True
-            else:
-                if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM_VIDEO and move_files:
-                    create_txt_of_no_dirs_moved = True
-    else:
-        create_txt_of_no_dirs_moved = False
+    create_txt_of_no_dirs_moved = False
+    if fname_source_first_date_pathlib.suffix in SUFFIXES_SIPECAM and move_files:
+        create_txt_of_no_dirs_moved = True
     if create_txt_of_no_dirs_moved:
         name_dir_for_dirs_not_moved  = "dirs_not_moved_with_simex"
         path_for_dir_with_txt_of_no_dirs_moved  = os.path.join(path_for_std_directory,
@@ -419,8 +409,8 @@ def move_files_to_standard_dir(logger,
         if f_pathlib_suffix in SUFFIXES_SIPECAM_AUDIO:
             SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_AUDIO
         else:
-            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES or f_pathlib_suffix in SUFFIXES_SIPECAM_VIDEO:
-                SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_IMAGES + SUFFIXES_SIPECAM_VIDEO
+            if f_pathlib_suffix in SUFFIXES_SIPECAM_IMAGES_VIDEO:
+                SUFFIXES_TO_CHECK_EXISTENCE_OF_FILE = SUFFIXES_SIPECAM_IMAGES_VIDEO
         dst_filename_exists = check_file_existence_in_standard_dir(logger,
                                                                    standard_dir,
                                                                    src_dir,
@@ -431,6 +421,7 @@ def move_files_to_standard_dir(logger,
                                                                    type_files_in_dir)
         if dst_filename_exists:
             logger.info("halting loop of moving files")
+            standard_dir = ""
             break
         if not dst_filename_exists:
             dict_mapping_dst_filename_src_filename[dst_filename] = filename
@@ -655,8 +646,8 @@ def main():
                                                             cumulus_poly,
                                                             type_files_in_dir)
             if not standard_directory:
-                register_dir_that_couldnt_move(deployment_date_of_device_found,
-                                               filename_source_first_date_pathlib,
+                logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                register_dir_that_couldnt_move(filename_source_first_date_pathlib,
                                                move_files,
                                                path_for_standard_directory,
                                                directory_with_file_of_serial_number_and_dates)
@@ -707,8 +698,9 @@ def main():
                         else:
                             idx_date = None
 
-                    if not idx_date: #there was no interval of deployment dates registered in Zendro Deployment table that contains dates of files
+                    if not idx_date:
                         deployment_date_of_device_found = False
+                        logger.info("there was no interval of deployment dates registered in Zendro Deployment table that contains dates of files")
                     else:
                         deployment_date_of_device_found = True
 
@@ -791,8 +783,8 @@ def main():
                                                                             cumulus_poly,
                                                                             type_files_in_dir)
                             if not standard_directory:
-                                register_dir_that_couldnt_move(deployment_date_of_device_found,
-                                                               filename_source_first_date_pathlib,
+                                logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                                register_dir_that_couldnt_move(filename_source_first_date_pathlib,
                                                                move_files,
                                                                path_for_standard_directory,
                                                                directory_with_file_of_serial_number_and_dates)
@@ -804,16 +796,16 @@ def main():
                     except Exception as e:
                         logger.info(e)
                         logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
-                        register_dir_that_couldnt_move(deployment_date_of_device_found,
-                                                       filename_source_first_date_pathlib,
+                        logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                        register_dir_that_couldnt_move(filename_source_first_date_pathlib,
                                                        move_files,
                                                        path_for_standard_directory,
                                                        directory_with_file_of_serial_number_and_dates)
                 except Exception as e:
                     logger.info(e)
                     logger.info("unsuccessful query %s or error when moving files to standard dir" % operation_sgqlc)
-                    register_dir_that_couldnt_move(deployment_date_of_device_found,
-                                                   filename_source_first_date_pathlib,
+                    logger.info("registering dir that couldnt be moved: %s" % directory_with_file_of_serial_number_and_dates)
+                    register_dir_that_couldnt_move(filename_source_first_date_pathlib,
                                                    move_files,
                                                    path_for_standard_directory,
                                                    directory_with_file_of_serial_number_and_dates)
