@@ -1,7 +1,8 @@
-import glob
-import itertools
+from pathlib import Path
 
-def multiple_file_types(input_directory, patterns, recursive=False):
+def multiple_file_types(input_directory: str,
+                        patterns: list[str],
+                        recursive: bool=False) -> list[Path]:
     """
     Return iterable with files that have a common pattern. Will search
     in a recursive or non recursive way.
@@ -13,9 +14,9 @@ def multiple_file_types(input_directory, patterns, recursive=False):
         iterable with files that have a common pattern.
     """
     if recursive:
-        expression = "/**/*"
+        expression = "**/*"
     else:
-        expression = "/*"
-    return itertools.chain.from_iterable(glob.iglob(input_directory + \
-                                                    expression + pattern,
-                                                    recursive=recursive) for pattern in patterns)
+        expression = "*"
+
+    return [file for file in Path(input_directory).glob(expression) if
+            file.suffix in patterns]
