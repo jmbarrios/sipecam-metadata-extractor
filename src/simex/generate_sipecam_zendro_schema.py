@@ -1,42 +1,37 @@
-import os
-import subprocess
+import sys
+import json
+from pathlib import Path
 
+from sgqlc.introspection import query, variables
+from sgqlc.endpoint.http import HTTPEndpoint
+from sgqlc.codegen.schema import CodeGen
 from simex.utils import zendro
 
-def call_sgqlc_introspection_and_codegen():
 
-    dir_with_schema = os.path.join(os.path.expanduser('~'),
-                                   "sipecam-metadata-extractor/src/simex")
-    os.makedirs(dir_with_schema, exist_ok=True)
+def call_sgqlc_introspection_and_codegen() -> None:
 
-    filename_schema = os.path.join(dir_with_schema,
-                                   "sipecam_zendro_schema")
-    string = "".join(["\"Authorization: bearer ",
-                      zendro.get_token(),
-                      "\"",
-                      " ",
-                      zendro.get_zendro_url_for_gql(),
-                      " "])
-    cmd1 = "".join(["python3 -m sgqlc.introspection --exclude-deprecated --exclude-description -H ",
-                    string,
-                    filename_schema,
-                    ".json"])
-    cmd2 = "".join(["sgqlc-codegen schema ",
-                    filename_schema,
-                    ".json",
-                    " ",
-                    filename_schema,
-                    ".py"])
-    run_out_cmd1 = subprocess.run(cmd1,
-                          shell=True,
-                          capture_output=True)
-    print("Standard Error sgqlc.introspection %s" % run_out_cmd1.stderr)
-    print("Standard Output sgqlc.introspection %s" % run_out_cmd1.stdout)
-    run_out_cmd2 = subprocess.run(cmd2,
-                          shell=True,
-                          capture_output=True)
-    print("Standard Error sgqlc-codegen %s" % run_out_cmd2.stderr)
-    print("Standard Output sgqlc-codegen %s" % run_out_cmd2.stdout)
+    dir_with_schema = Path.home() / "sipecam-metadata-extractor" / "src" / "simex"
+
+    dir_with_schema.mkdir(parents=True, exist_ok=True)
+    schema_name = "sipecam_zendro_schema"
+    filename_schema = dir_with_schema / f"{schema_name}.json"
+    outfile_schema = dir_with_schema / f"{schema_name}.py"
+
+    headers = {"Authorization": f"bearer {zendro.get_token()}"}
+    endpoint = HTTPEndpoint(zendro.get_zendro_url_for_gql(), headers)
+
+    schema = endpoint(
+        query, variables(include_description=False, include_deprecated=False)
+    )
+
+    json.dump(schema, filename_schema.open("w"), sort_keys=True, indent=2, default=str)
+
+    if schema.get("errors"):
+        sys.exit(1)
+
+    with open(outfile_schema, "w") as outfile:
+        gen = CodeGen(schema_name, schema['data']['__schema'], outfile.write, False)
+        gen.write()
 
 def main():
     call_sgqlc_introspection_and_codegen()
